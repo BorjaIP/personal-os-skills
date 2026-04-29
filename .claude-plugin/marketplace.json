@@ -1,0 +1,84 @@
+{
+  "name": "personal-os-skills",
+  "owner": {
+    "name": "Borja Irigoyen"
+  },
+  "metadata": {
+    "description": "Personal collection of Claude Code and Cursor skills",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "k8s-error-analyzer-skill",
+      "description": "Analyze Kubernetes pod failures by reading logs, identifying errors, and generating detailed error analysis reports.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/k8s-error-analyzer"
+      ]
+    },
+    {
+      "name": "k8s-optimizer-cost-skill",
+      "description": "Analyze cost efficiency and right-size Kubernetes workloads in a namespace using 7-day Datadog metrics and PerfectScale-style policy-driven recommendations.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/k8s-optimizer-cost"
+      ]
+    },
+    {
+      "name": "create-runbook-skill",
+      "description": "Promote recurring triage notes into living runbooks under ops/runbooks/ with automatic backlinks.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/create-runbook"
+      ]
+    },
+    {
+      "name": "datadog-triage-skill",
+      "description": "End-to-end Datadog triage orchestrator. Plans the investigation, delegates to service-health / logs / metrics sub-skills, and produces a consolidated report + master Datadog notebook.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/datadog-triage"
+      ]
+    },
+    {
+      "name": "datadog-service-health-skill",
+      "description": "APM-centric health check for a Datadog service: latency p50/p95/p99, error rate, throughput, traces, dependencies, monitor coverage.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/datadog-service-health"
+      ]
+    },
+    {
+      "name": "datadog-logs-analyzer-skill",
+      "description": "Datadog logs investigation via pattern clustering, attribute discovery, and DDSQL aggregations; produces a triage report with evidence deep-links.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/datadog-logs-analyzer"
+      ]
+    },
+    {
+      "name": "datadog-metrics-investigator-skill",
+      "description": "Datadog metric spike / anomaly investigation: metadata discovery, sliced timeseries, baseline comparison, existing dashboard reuse, Cloud Cost support.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/datadog-metrics-investigator"
+      ]
+    },
+    {
+      "name": "datadog-report-publisher-skill",
+      "description": "Shared publisher for the Datadog skill suite: writes an Obsidian-friendly Markdown artefact AND a linked Datadog Notebook with embedded widgets.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/datadog-report-publisher"
+      ]
+    }
+  ]
+}
