@@ -1,6 +1,6 @@
 # Personal OS Skills
 
-A personal collection of skills for [Claude Code](https://docs.claude.com/en/docs/claude-code) and [Cursor](https://cursor.com). It centralises in a single repository the capabilities I use daily so I can install them at the user level on any machine.
+A personal collection of skills for any coding agent — [Claude Code](https://docs.claude.com/en/docs/claude-code), [Cursor](https://cursor.com), [OpenCode](https://github.com/opencode-ai/opencode), or whichever you prefer. It centralises in a single repository the capabilities I use daily so I can install them at the user level on any machine.
 
 > Inspired by [ArtemXTech/personal-os-skills](https://github.com/ArtemXTech/personal-os-skills).
 
