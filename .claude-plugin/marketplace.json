@@ -79,6 +79,15 @@
       "skills": [
         "./skills/datadog-report-publisher"
       ]
+    },
+    {
+      "name": "agent-reviewer-skill",
+      "description": "Independent second opinion on agent-produced work: reviews local diffs, commit ranges, or PRs across four dimensions and generates a correction plan if findings warrant it.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/agent-reviewer"
+      ]
     }
   ]
 }
