@@ -79,6 +79,15 @@
       "skills": [
         "./skills/datadog-report-publisher"
       ]
+    },
+    {
+      "name": "run-skill",
+      "description": "Wrapper for your own prompts: resolves the current repo to its matching Meridian project in the Obsidian PKM vault, reads the latest active prompt from PROMPTS.md, executes it in the current session, and strikes it through into history.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/run"
+      ]
     }
   ]
 }
