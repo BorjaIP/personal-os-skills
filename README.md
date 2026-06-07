@@ -34,6 +34,9 @@ These skills are the bridge. They connect the tools I use daily (Kubernetes, Jen
 
 ### Productivity
 - **[meet](skills/meet/)** — Record meetings, transcribe with Whisper, create Obsidian notes, AI-enhance into structured reports
+- **[capture-insights](skills/capture-insights/)** — Extract durable engineering knowledge from conversations and persist it to topic notes in the Obsidian vault
+- **[run](skills/run/)** — Execute your own free-form prompts written in the Obsidian PKM (`meridian/<slug>/PROMPTS.md`) directly in the current session
+- **[second-opinion](skills/second-opinion/)** — Independent multi-agent QA review of agent-produced work: intent alignment, bug scan, CLAUDE.md compliance, and optional correction plan
 
 
 ## Kubernetes
@@ -51,6 +54,12 @@ Triage notes are useful once. When the same failure repeats, they need to become
 ## Productivity
 
 Meetings generate decisions and action items that get lost in memory. The `meet` skill records audio, transcribes locally with Whisper, creates an Obsidian note, and lets Claude structure it into Summary / Decisions / Action Items / Open Questions — all without leaving my vault. Full details: **[docs/meet.md](docs/meet.md)**.
+
+`capture-insights` bridges conversations and the vault: when a debugging session or architecture discussion surfaces durable knowledge, one command extracts it, matches it to existing topic notes, and appends — never overwrites — with a date stamp. Good for CI/CD patterns, root-cause analyses, architectural decisions, and data engineering patterns.
+
+`run` flips the interaction model: instead of typing prompts in the chat box, you write them in `meridian/<slug>/PROMPTS.md` inside your vault, then call `/run` to execute the last pending one. The executed prompt is struck through with a timestamp so the file doubles as a run history.
+
+`second-opinion` is an independent QA layer for agent-produced changes. It spawns four parallel review agents (intent alignment, bug scan, CLAUDE.md compliance, historical context), scores every finding, filters out low-confidence noise, and — if significant issues remain — optionally enters Plan Mode to produce a correction plan.
 
 ---
 
