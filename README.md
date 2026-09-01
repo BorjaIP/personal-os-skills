@@ -63,6 +63,62 @@ Meetings generate decisions and action items that get lost in memory. The `meet`
 
 ---
 
+## Harness bootstrap
+
+This repository contains two independent entry points:
+
+- `install.sh` installs the personal skills into the user-level Claude Code and Cursor directories, with optional Obsidian path configuration.
+- `bootstrap-harness.sh` installs and configures the surrounding AI coding harness: T3 Code, Claude Code, Codex CLI, Cursor CLI, Gentle AI, and Engram.
+
+The harness bootstrap does not install or configure skills, does not initialise a project, and does not write configuration into repositories. It configures Gentle AI globally with the `minimal` preset, which provides SDD skills and Engram integration. Graphify, CodeGraph, Context7, and GGA remain separate future options.
+
+On macOS, the bootstrap also trusts `gentleman-programming/tap` before installing the Gentleman Programming Homebrew packages.
+
+### Harness installation
+
+Review the actions first:
+
+```bash
+./bootstrap-harness.sh --dry-run
+```
+
+Install missing tools and apply the global configuration:
+
+```bash
+./bootstrap-harness.sh all
+```
+
+The script is conservative by default: installed tools are detected and left unchanged. To review updates one tool at a time:
+
+```bash
+./bootstrap-harness.sh all --update
+```
+
+Answer `y` to update an installed tool or `n` to keep it; the script continues with the remaining tools. To update everything without prompts:
+
+```bash
+./bootstrap-harness.sh all --update --yes
+```
+
+Other useful commands:
+
+```bash
+./bootstrap-harness.sh doctor
+./bootstrap-harness.sh all --without-t3
+./bootstrap-harness.sh configure --agents claude-code,codex
+./bootstrap-harness.sh configure --preset full-gentleman
+```
+
+Authentication remains manual:
+
+```bash
+codex --login
+cursor-agent login
+claude
+```
+
+When you open a repository in T3 Code for the first time, run `/sdd-init` from the agent you choose. The bootstrap intentionally leaves project initialisation under your control. For the complete SDD workflow, use a Planner, Implementer, Reviewer, Fixer, and Final Reviewer thread, selecting a different CLI when you want cross-agent review.
+
 ## Installation
 
 ### Option 1 — Install script (recommended)
@@ -88,7 +144,7 @@ Relevant options:
 ./install.sh --vault ~/pkm/pkm        # non-interactive vault
 ./install.sh --ops-dir ~/pkm/pkm/ops  # non-interactive ops dir
 ./install.sh --claude-only            # installs only into ~/.claude/skills
-./install.sh --cursor-only            # installs only into ~/.cursor/skills-cursor
+./install.sh --cursor-only            # installs only into ~/.cursor/skills
 ./install.sh --copy                   # copy instead of symlink (for skills without placeholders)
 ./install.sh --uninstall              # removes previously installed entries
 ./install.sh --dry-run                # shows what it would do without touching anything
@@ -127,7 +183,7 @@ If you only want a specific skill:
 # Claude
 ln -s "$PWD/skills/k8s-error-analyzer" ~/.claude/skills/k8s-error-analyzer
 # Cursor
-ln -s "$PWD/skills/k8s-error-analyzer" ~/.cursor/skills-cursor/k8s-error-analyzer
+ln -s "$PWD/skills/k8s-error-analyzer" ~/.cursor/skills/k8s-error-analyzer
 ```
 
 ## Repo Layout
@@ -136,10 +192,11 @@ ln -s "$PWD/skills/k8s-error-analyzer" ~/.cursor/skills-cursor/k8s-error-analyze
 personal-os-skills/
 ├── .claude-plugin/
 │   └── marketplace.json     # Claude Code plugin marketplace manifest
+├── bootstrap-harness.sh     # AI coding harness installer/configurator
+├── install.sh               # Personal skills installer
 ├── skills/
 │   └── <skill-name>/
 │       └── SKILL.md         # frontmatter + skill instructions
-├── install.sh               # cross-platform installer (symlink/copy)
 └── README.md
 ```
 
