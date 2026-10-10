@@ -143,6 +143,8 @@ When you open a repository in T3 Code for the first time, run `/sdd-init` from t
 
 ### Option 1 — Install script (recommended)
 
+> To choose harness tools and skills in one place, use `./setup.sh` (see [Setup](#setup)). `install.sh` below handles skills only.
+
 Installs the skills you choose, grouped by family (`kubernetes`, `datadog`, `ops`, `productivity`, `harness`), and integrates them with your Obsidian vault if you want. It only installs into harnesses it detects (Claude Code: `claude` or `~/.claude`; Cursor: `cursor-agent` or `~/.cursor`) and reports the ones it skips. Skills without placeholders are installed as **symlinks** (changes in the repo are reflected automatically); skills with placeholders are rendered as a **customised copy** for this machine.
 
 ```bash
