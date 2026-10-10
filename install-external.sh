@@ -59,6 +59,8 @@ status_of() { # $1=skills column
   local first dirs=() id skills_dir
   [[ "$1" == "*" ]] && { printf 'unknown'; return; }
   first="${1%%,*}"
+  # "Universal" agents (Cursor, Gemini CLI, Codex, ...) share ~/.agents/skills.
+  [[ -e "$HOME/.agents/skills/$first" ]] && { printf 'installed'; return; }
   while IFS='|' read -r id skills_dir; do
     [[ -e "$skills_dir/$first" ]] && { printf 'installed'; return; }
   done < <(detected_harnesses)
