@@ -18,6 +18,11 @@
 #   ./install.sh --reconfigure         # re-run the config prompt even if config exists
 #   ./install.sh --vault <path>        # set Obsidian vault path non-interactively
 #   ./install.sh --ops-dir <path>      # set Obsidian ops dir non-interactively
+#   ./install.sh --list                # print skills grouped by family and exit
+#   ./install.sh --family a,b          # install only these families
+#   ./install.sh --skip-family a,b     # install everything except these families
+#   ./install.sh --skill x,y           # install only these skills
+#   ./install.sh --all                 # ignore the saved selection, install everything
 
 set -euo pipefail
 
@@ -45,13 +50,21 @@ RECONFIGURE=0
 CLI_VAULT=""
 CLI_OPS_DIR=""
 
+LIST_ONLY=0
+OPT_ALL=0
+OPT_FAMILIES=""
+OPT_SKIP_FAMILIES=""
+OPT_SKILLS=""
+SKILL_FAMILIES=""   # saved selection ("all" or comma-separated families)
+SKILLS_CONFIG_FILE="$CONFIG_DIR/skills.env"
+
 color() { if [[ -t 1 ]]; then printf "\033[%sm%s\033[0m" "$1" "$2"; else printf "%s" "$2"; fi; }
 info() { echo "$(color "1;34" "==>") $*"; }
 warn() { echo "$(color "1;33" "!! ") $*" >&2; }
 err()  { echo "$(color "1;31" "xx ") $*" >&2; }
 
 usage() {
-  sed -n '2,22p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,25p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
   exit "${1:-0}"
 }
 
@@ -67,6 +80,11 @@ while [[ $# -gt 0 ]]; do
     --reconfigure) RECONFIGURE=1 ;;
     --vault)       shift; CLI_VAULT="${1:-}" ;;
     --ops-dir)     shift; CLI_OPS_DIR="${1:-}" ;;
+    --list)        LIST_ONLY=1 ;;
+    --all)         OPT_ALL=1 ;;
+    --family)      shift; OPT_FAMILIES="${1:-}" ;;
+    --skip-family) shift; OPT_SKIP_FAMILIES="${1:-}" ;;
+    --skill)       shift; OPT_SKILLS="${1:-}" ;;
     -h|--help)     usage 0 ;;
     *)             err "Unknown argument: $1"; usage 1 ;;
   esac
@@ -80,6 +98,31 @@ run() {
     eval "$@"
   fi
 }
+
+# ---------------------------------------------------------------------------
+# Harness detection: install only where the harness exists, report the rest.
+# ---------------------------------------------------------------------------
+
+harness_present() { # $1=cli binary  $2=user config dir
+  command -v "$1" >/dev/null 2>&1 || [[ -d "$2" ]]
+}
+
+detect_harnesses() {
+  if [[ "$INSTALL_CLAUDE" -eq 1 ]] && ! harness_present claude "$HOME/.claude"; then
+    INSTALL_CLAUDE=0
+    info "Claude Code not detected: skipping $CLAUDE_DEST"
+  fi
+  if [[ "$INSTALL_CURSOR" -eq 1 ]] && ! harness_present cursor-agent "$HOME/.cursor"; then
+    INSTALL_CURSOR=0
+    info "Cursor not detected: skipping $CURSOR_DEST"
+  fi
+  if [[ "$INSTALL_CLAUDE" -eq 0 && "$INSTALL_CURSOR" -eq 0 ]]; then
+    warn "No supported harness detected; nothing to install."
+    exit 0
+  fi
+}
+
+[[ "$ACTION" == "install" && "$LIST_ONLY" -eq 0 ]] && detect_harnesses
 
 # ---------------------------------------------------------------------------
 # Configuration (Obsidian paths)
@@ -457,6 +500,132 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
+# Skill selection (families)
+# ---------------------------------------------------------------------------
+
+FAMILY_ORDER=(kubernetes datadog ops productivity harness other)
+
+skill_family() { # $1=skill name
+  case "$1" in
+    k8s-*)          echo kubernetes ;;
+    datadog-*)      echo datadog ;;
+    create-runbook) echo ops ;;
+    meet|capture-insights|run|second-opinion) echo productivity ;;
+    stack-updater)  echo harness ;;
+    *)              echo other ;;
+  esac
+}
+
+in_list() { case ",$2," in *",$1,"*) return 0 ;; *) return 1 ;; esac; }
+
+skill_selected() { # $1=skill name
+  local fam wanted
+  fam="$(skill_family "$1")"
+  if [[ -n "$OPT_SKILLS" ]]; then in_list "$1" "$OPT_SKILLS"; return; fi
+  if [[ -n "$OPT_SKIP_FAMILIES" ]] && in_list "$fam" "$OPT_SKIP_FAMILIES"; then return 1; fi
+  wanted="$OPT_FAMILIES"
+  [[ -z "$wanted" && "$OPT_ALL" -eq 0 ]] && wanted="$SKILL_FAMILIES"
+  [[ -z "$wanted" || "$wanted" == "all" ]] || in_list "$fam" "$wanted"
+}
+
+# Families that actually contain skills, in display order.
+present_families() {
+  local fam path n
+  for fam in "${FAMILY_ORDER[@]}"; do
+    for path in "${SKILLS[@]}"; do
+      n="$(basename "$path")"
+      [[ -f "$path/SKILL.md" && "$(skill_family "$n")" == "$fam" ]] && { echo "$fam"; break; }
+    done
+  done
+  return 0  # last test may be false; pipefail would abort callers
+}
+
+print_catalog() { # marks selection state when $1=marks
+  local fam path n mark
+  while IFS= read -r fam; do
+    echo "  $fam"
+    for path in "${SKILLS[@]}"; do
+      n="$(basename "$path")"
+      [[ -f "$path/SKILL.md" && "$(skill_family "$n")" == "$fam" ]] || continue
+      mark=" "
+      if [[ "${1:-}" == "marks" ]]; then skill_selected "$n" && mark="x" || mark=" "; fi
+      if [[ "${1:-}" == "marks" ]]; then echo "    [$mark] $n"; else echo "    - $n"; fi
+    done
+  done < <(present_families)
+}
+
+validate_selection() {
+  local item fams skills
+  fams="$(present_families | tr '\n' ',')"
+  skills="$(for p in "${SKILLS[@]}"; do basename "$p"; done | tr '\n' ',')"
+  for item in ${OPT_FAMILIES//,/ } ${OPT_SKIP_FAMILIES//,/ }; do
+    in_list "$item" "$fams" || { err "Unknown family '$item'. Available: ${fams%,}"; exit 1; }
+  done
+  for item in ${OPT_SKILLS//,/ }; do
+    in_list "$item" "$skills" || { err "Unknown skill '$item'. Run ./install.sh --list"; exit 1; }
+  done
+}
+
+save_skill_selection() {
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    echo "    [dry-run] save skill selection ($SKILL_FAMILIES) to $SKILLS_CONFIG_FILE"
+    return
+  fi
+  mkdir -p "$CONFIG_DIR"
+  printf '# Managed by personal-os-skills/install.sh\nSKILL_FAMILIES="%s"\n' "$SKILL_FAMILIES" > "$SKILLS_CONFIG_FILE"
+  info "Saved skill selection to $SKILLS_CONFIG_FILE"
+}
+
+prompt_skill_families() {
+  local fams=() fam i=1 answer token chosen=()
+  while IFS= read -r fam; do fams+=("$fam"); done < <(present_families)
+
+  echo
+  info "Choose which skill families to install"
+  for fam in "${fams[@]}"; do
+    echo "  $i) $fam: $(for p in "${SKILLS[@]}"; do n="$(basename "$p")"; [[ "$(skill_family "$n")" == "$fam" ]] && printf '%s ' "$n"; done)"
+    i=$((i + 1))
+  done
+  read -rp "  Numbers or names, comma-separated (Enter = all): " answer
+  if [[ -z "$answer" || "$answer" == "all" ]]; then
+    SKILL_FAMILIES="all"
+  else
+    for token in ${answer//,/ }; do
+      if [[ "$token" =~ ^[0-9]+$ && "$token" -ge 1 && "$token" -le ${#fams[@]} ]]; then
+        chosen+=("${fams[$((token - 1))]}")
+      elif in_list "$token" "$(IFS=,; echo "${fams[*]}")"; then
+        chosen+=("$token")
+      else
+        err "Unknown family '$token'"; exit 1
+      fi
+    done
+    SKILL_FAMILIES="$(IFS=,; echo "${chosen[*]}")"
+  fi
+  save_skill_selection
+}
+
+select_skills() {
+  # shellcheck disable=SC1090
+  [[ -f "$SKILLS_CONFIG_FILE" ]] && source "$SKILLS_CONFIG_FILE"
+  validate_selection
+
+  local has_flags=0
+  [[ -n "$OPT_FAMILIES$OPT_SKIP_FAMILIES$OPT_SKILLS" || "$OPT_ALL" -eq 1 ]] && has_flags=1
+
+  if [[ "$has_flags" -eq 0 && "$PROMPT" -eq 1 && -t 0 && ( -z "$SKILL_FAMILIES" || "$RECONFIGURE" -eq 1 ) ]]; then
+    prompt_skill_families
+  fi
+
+  # No terminal (agent, CI) and nothing chosen: never install everything by default.
+  if [[ "$has_flags" -eq 0 && -z "$SKILL_FAMILIES" ]]; then
+    err "No skill selection. Choose with --family, --skip-family, --skill or --all."
+    echo "    Families: $(present_families | tr '\n' ' ')" >&2
+    echo "    Details:  ./install.sh --list" >&2
+    exit 2
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -464,11 +633,6 @@ if [[ ! -d "$SKILLS_SRC" ]]; then
   err "skills/ directory not found at $SKILLS_SRC"
   exit 1
 fi
-
-configure
-
-bootstrap_ops_tree
-bootstrap_meetings_tree
 
 SKILLS=()
 while IFS= read -r line; do
@@ -478,6 +642,26 @@ done < <(find "$SKILLS_SRC" -mindepth 1 -maxdepth 1 -type d | sort)
 if [[ ${#SKILLS[@]} -eq 0 ]]; then
   warn "No skills found in $SKILLS_SRC"
   exit 0
+fi
+
+if [[ "$LIST_ONLY" -eq 1 ]]; then
+  info "Skills by family"
+  print_catalog
+  exit 0
+fi
+
+if [[ "$ACTION" == "install" ]]; then
+  select_skills
+fi
+
+configure
+
+bootstrap_ops_tree
+bootstrap_meetings_tree
+
+if [[ "$ACTION" == "install" ]]; then
+  info "Skills to install ([x] = selected)"
+  print_catalog marks
 fi
 
 info "Repo root: $REPO_ROOT"
@@ -494,6 +678,7 @@ for skill_path in "${SKILLS[@]}"; do
   fi
 
   if [[ "$ACTION" == "install" ]]; then
+    skill_selected "$skill_name" || continue
     info "Installing $skill_name"
     [[ "$INSTALL_CLAUDE" -eq 1 ]] && install_skill "$skill_path" "$CLAUDE_DEST" "$skill_name"
     [[ "$INSTALL_CURSOR" -eq 1 ]] && install_skill "$skill_path" "$CURSOR_DEST" "$skill_name"

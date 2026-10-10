@@ -4,9 +4,9 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 
 # Bootstrap for T3 Code, agent CLIs, Gentle AI and Engram.
-# The default Gentle AI preset provides SDD skills and Engram without CodeGraph.
-# Graphify, CodeGraph, Context7, GGA and project-local configuration are outside
-# this bootstrap by design. Authentication is never automated.
+# The default Gentle AI preset (full-gentleman) includes Engram, Context7, GGA,
+# skills, permissions, persona and theme. Graphify, CodeGraph and project-local
+# configuration are outside this bootstrap by design. Authentication is never automated.
 
 readonly SCRIPT_NAME="$(basename "$0")"
 readonly HARNESS_HOME="${HOME:?HOME is not set}"
@@ -14,7 +14,7 @@ readonly HARNESS_BIN_DIR="${HARNESS_HOME}/.local/bin"
 
 COMMAND="all"
 AGENT_TARGETS="${HARNESS_AGENTS:-claude-code,codex,cursor}"
-GENTLE_PRESET="${HARNESS_GENTLE_PRESET:-minimal}"
+GENTLE_PRESET="${HARNESS_GENTLE_PRESET:-full-gentleman}"
 DRY_RUN=0
 ASSUME_YES=0
 UPDATE_REQUESTED=0
@@ -53,8 +53,9 @@ Commands:
 Options:
   --agents LIST    Gentle AI agent IDs, comma-separated.
                    Default: claude-code,codex,cursor
-  --preset NAME    Gentle AI preset. Default: minimal
-                   (Engram + SDD skills; no CodeGraph/Context7/GGA/theme.)
+  --preset NAME    Gentle AI preset. Default: full-gentleman
+                   (Engram, Context7, GGA, skills, permissions, persona, theme.
+                   Other presets: minimal, ecosystem-only.)
   --update         Ask whether to update each installed tool.
                    Without this flag, installed tools are left unchanged.
   --without-t3     Skip T3 installation.
@@ -375,9 +376,40 @@ install_all() {
   ok "Tool installation completed."
 }
 
+agent_cli_name() {
+  case "$1" in
+    claude-code) printf 'claude' ;;
+    cursor) printf 'cursor-agent' ;;
+    *) printf '%s' "$1" ;;
+  esac
+}
+
+# Keep only agents whose CLI is installed; report the rest without installing them.
+filter_installed_agents() {
+  local agent present=() missing=()
+  local -a requested
+  IFS=',' read -r -a requested <<< "$AGENT_TARGETS"
+
+  for agent in "${requested[@]}"; do
+    if has_command "$(agent_cli_name "$agent")"; then
+      present+=("$agent")
+    else
+      missing+=("$agent")
+    fi
+  done
+
+  (( ${#missing[@]} == 0 )) || info "Not installed, skipping: $(IFS=,; echo "${missing[*]}")"
+  (( ${#present[@]} > 0 )) || die "None of the requested agents is installed (${AGENT_TARGETS})."
+  AGENT_TARGETS="$(IFS=,; echo "${present[*]}")"
+}
+
 configure_gentle_ai() {
   if ! has_command gentle-ai && (( DRY_RUN == 0 )); then
     die "Gentle AI is not installed. Run first: $SCRIPT_NAME install"
+  fi
+
+  if (( DRY_RUN == 0 )); then
+    filter_installed_agents
   fi
 
   info "Configuring Gentle AI globally for: ${AGENT_TARGETS}"

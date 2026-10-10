@@ -39,6 +39,9 @@ These skills are the bridge. They connect the tools I use daily (Kubernetes, Jen
 - **[second-opinion](skills/second-opinion/)** — Independent multi-agent QA review of agent-produced work: intent alignment, bug scan, CLAUDE.md compliance, and optional correction plan
 
 
+### Harness
+- **[stack-updater](skills/stack-updater/)** — Report available updates for the tools `bootstrap-harness.sh` installs (Claude Code, Codex, Cursor CLI, Gentle AI, Engram) and for this repo's skills, then apply them on approval
+
 ## Kubernetes
 
 I manage multiple clusters and namespaces. When a pod crashes or a deployment is burning money with oversized requests, I need answers fast — not a 20-minute kubectl session. These skills read logs and metrics, produce a structured report, and drop it into `ops/k8s/` so the analysis is searchable later. Full details: **[docs/k8s.md](docs/k8s.md)**.
@@ -61,6 +64,10 @@ Meetings generate decisions and action items that get lost in memory. The `meet`
 
 `second-opinion` is an independent QA layer for agent-produced changes. It spawns four parallel review agents (intent alignment, bug scan, CLAUDE.md compliance, historical context), scores every finding, filters out low-confidence noise, and — if significant issues remain — optionally enters Plan Mode to produce a correction plan.
 
+## Harness
+
+`stack-updater` keeps the stack this repo installs current without being invasive. It runs a read-only scan (distro, package manager, install source of each binary), asks `gentle-ai update` for Gentle AI, Engram and GGA, and compares this repo's skills with what is installed. Tools that are not installed are listed in one line, never offered for installation. Nothing is updated until you approve the exact list. Extra items to track go in `~/.config/personal-os-skills/stack.yaml`.
+
 ---
 
 ## Harness bootstrap
@@ -70,7 +77,7 @@ This repository contains two independent entry points:
 - `install.sh` installs the personal skills into the user-level Claude Code and Cursor directories, with optional Obsidian path configuration.
 - `bootstrap-harness.sh` installs and configures the surrounding AI coding harness: T3 Code, Claude Code, Codex CLI, Cursor CLI, Gentle AI, and Engram.
 
-The harness bootstrap does not install or configure skills, does not initialise a project, and does not write configuration into repositories. It configures Gentle AI globally with the `minimal` preset, which provides SDD skills and Engram integration. Graphify, CodeGraph, Context7, and GGA remain separate future options.
+The harness bootstrap does not install or configure skills, does not initialise a project, and does not write configuration into repositories. It configures Gentle AI globally with the `full-gentleman` preset, which provides Engram, Context7, GGA, skills, permissions, persona, and theme. Use `--preset minimal` (or `HARNESS_GENTLE_PRESET`) for a lighter setup. `configure` only targets agents whose CLI is installed and reports the rest. Graphify and CodeGraph remain separate options.
 
 On macOS, the bootstrap also trusts `gentleman-programming/tap` before installing the Gentleman Programming Homebrew packages.
 
@@ -123,7 +130,7 @@ When you open a repository in T3 Code for the first time, run `/sdd-init` from t
 
 ### Option 1 — Install script (recommended)
 
-Installs all skills in this repo and integrates them with your Obsidian vault if you want. Skills without placeholders are installed as **symlinks** (changes in the repo are reflected automatically); skills with placeholders are rendered as a **customised copy** for this machine.
+Installs the skills you choose, grouped by family (`kubernetes`, `datadog`, `ops`, `productivity`, `harness`), and integrates them with your Obsidian vault if you want. It only installs into harnesses it detects (Claude Code: `claude` or `~/.claude`; Cursor: `cursor-agent` or `~/.cursor`) and reports the ones it skips. Skills without placeholders are installed as **symlinks** (changes in the repo are reflected automatically); skills with placeholders are rendered as a **customised copy** for this machine.
 
 ```bash
 git clone https://github.com/<your-user>/personal-os-skills.git ~/projects/personal-os-skills
@@ -133,16 +140,21 @@ cd ~/projects/personal-os-skills
 
 The installer will (optionally) prompt for your Obsidian vault path. If you answer, skills that generate analyses (k8s, datadog, sentry, incidents, runbooks) will land their artefacts under `<vault>/ops/<source>/` directly. If you skip it, they fall back to `./docs/error_analyses/` relative to CWD as before.
 
-Configuration is persisted in `~/.config/personal-os-skills/config.env` and reused on subsequent runs.
+Configuration is persisted in `~/.config/personal-os-skills/config.env` and reused on subsequent runs. In a terminal the installer asks which families to install and saves the answer in `~/.config/personal-os-skills/skills.env`. Without a terminal (an agent, CI, or `--no-prompt`) it refuses to install everything by default: pass `--family`, `--skip-family`, `--skill` or `--all`.
 
 Relevant options:
 
 ```bash
 ./install.sh                          # interactive, prompts for vault
-./install.sh --no-prompt              # uses previous config or legacy defaults, no prompts
+./install.sh --no-prompt --all        # no prompts; needs a selection (--all, --family, ...) unless one is saved
 ./install.sh --reconfigure            # re-runs the prompt even if config already exists
 ./install.sh --vault ~/pkm/pkm        # non-interactive vault
 ./install.sh --ops-dir ~/pkm/pkm/ops  # non-interactive ops dir
+./install.sh --list                   # lists skills grouped by family (kubernetes, datadog, ops, productivity, harness)
+./install.sh --family ops,productivity   # installs only those families
+./install.sh --skip-family datadog,kubernetes  # installs everything except those families
+./install.sh --skill run,meet         # installs only those skills
+./install.sh --all                    # ignores the saved selection
 ./install.sh --claude-only            # installs only into ~/.claude/skills
 ./install.sh --cursor-only            # installs only into ~/.cursor/skills
 ./install.sh --copy                   # copy instead of symlink (for skills without placeholders)
