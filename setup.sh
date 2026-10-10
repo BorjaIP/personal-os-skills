@@ -1,20 +1,21 @@
 #!/usr/bin/env bash
-# Single entry point: choose harness tools and skill families, then delegate to
-# bootstrap-harness.sh (tools) and install.sh (skills). Both still work on their own.
+# Single entry point: choose harness tools, skill families and external (third-party) skills,
+# then delegate to bootstrap-harness.sh, install.sh and install-external.sh. All still work on their own.
 #
 # Usage:
 #   ./setup.sh                                  # interactive menu
 #   ./setup.sh --list                           # print tools and skill families, then exit
 #   ./setup.sh --only claude-code,gentle-ai,ops # non-interactive: tool ids and/or family names
 #   ./setup.sh --only harness --dry-run         # preview without changing anything
+#   ./setup.sh --only diagram-design            # third-party skill from external/catalog.tsv
 #   ./setup.sh --only gentle-ai --preset minimal --yes
 #
 # Options:
-#   --only LIST    tool ids and skill family names, comma-separated
+#   --only LIST    tool ids, skill family names and external skill ids, comma-separated
 #   --preset NAME  Gentle AI preset (default: full-gentleman)
 #   --yes, -y      do not ask for confirmation
 #   --dry-run      show actions without performing them
-#   --list         list available tools and families
+#   --list         list tools, external skills and families
 #   -h, --help     show this help
 
 set -euo pipefail
@@ -22,6 +23,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BOOTSTRAP="$ROOT/bootstrap-harness.sh"
 INSTALLER="$ROOT/install.sh"
+EXTERNAL="$ROOT/install-external.sh"
 
 ONLY=""
 PRESET=""
@@ -33,7 +35,7 @@ err()  { printf 'xx %s\n' "$*" >&2; }
 info() { printf '==> %s\n' "$*"; }
 
 usage() {
-  sed -n '2,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,18p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
   exit "${1:-0}"
 }
 
@@ -57,6 +59,11 @@ while IFS=$'\t' read -r id status label; do
   TOOL_IDS+=("$id"); TOOL_STATUS+=("$status"); TOOL_LABEL+=("$label")
 done < <("$BOOTSTRAP" list)
 
+EXT_IDS=(); EXT_STATUS=(); EXT_LABEL=()
+while IFS=$'\t' read -r id status license source desc; do
+  EXT_IDS+=("$id"); EXT_STATUS+=("$status"); EXT_LABEL+=("$desc [$license, $source]")
+done < <("$EXTERNAL" list)
+
 FAMILY_IDS=(); FAMILY_SKILLS=()
 while IFS= read -r line; do
   if [[ "$line" =~ ^\ \ ([a-z][a-z-]*)$ ]]; then
@@ -74,6 +81,11 @@ print_catalog() {
     printf '  %2d) %-12s %-10s %s\n' "$n" "${TOOL_IDS[$i]}" "${TOOL_STATUS[$i]}" "${TOOL_LABEL[$i]}"
     n=$((n + 1))
   done
+  echo "External skills (third-party)"
+  for i in "${!EXT_IDS[@]}"; do
+    printf '  %2d) %-16s %-10s %s\n' "$n" "${EXT_IDS[$i]}" "${EXT_STATUS[$i]}" "${EXT_LABEL[$i]}"
+    n=$((n + 1))
+  done
   echo "Skill families"
   for i in "${!FAMILY_IDS[@]}"; do
     printf '  %2d) %-12s %s\n' "$n" "${FAMILY_IDS[$i]}" "${FAMILY_SKILLS[$i]}"
@@ -83,7 +95,7 @@ print_catalog() {
 
 # Map one token (number or name) to a canonical tool id or family name.
 resolve_token() {
-  local token="$1" all=("${TOOL_IDS[@]}" "${FAMILY_IDS[@]}") t
+  local token="$1" all=("${TOOL_IDS[@]}" ${EXT_IDS[@]+"${EXT_IDS[@]}"} "${FAMILY_IDS[@]}") t
   if [[ "$token" =~ ^[0-9]+$ ]]; then
     (( token >= 1 && token <= ${#all[@]} )) || return 1
     printf '%s' "${all[$((token - 1))]}"
@@ -114,20 +126,25 @@ if [[ -z "$ONLY" ]]; then
   fi
 fi
 
-SEL_TOOLS=(); SEL_FAMILIES=()
+SEL_TOOLS=(); SEL_EXTERNAL=(); SEL_FAMILIES=()
 IFS=',' read -r -a TOKENS <<< "$ONLY"
 for token in "${TOKENS[@]}"; do
   token="${token// /}"
   [[ -n "$token" ]] || continue
   name="$(resolve_token "$token")" || { err "Unknown selection '$token'. Run ./setup.sh --list"; exit 1; }
-  is_tool=0
-  for t in "${TOOL_IDS[@]}"; do [[ "$t" == "$name" ]] && is_tool=1; done
-  if (( is_tool == 1 )); then SEL_TOOLS+=("$name"); else SEL_FAMILIES+=("$name"); fi
+  kind=family
+  for t in "${TOOL_IDS[@]}"; do [[ "$t" == "$name" ]] && kind=tool; done
+  for t in ${EXT_IDS[@]+"${EXT_IDS[@]}"}; do [[ "$t" == "$name" && "$kind" == family ]] && kind=external; done
+  case "$kind" in
+    tool)     SEL_TOOLS+=("$name") ;;
+    external) SEL_EXTERNAL+=("$name") ;;
+    *)        SEL_FAMILIES+=("$name") ;;
+  esac
 done
 
 join() { local IFS=,; echo "$*"; }
 
-if (( ${#SEL_TOOLS[@]} == 0 && ${#SEL_FAMILIES[@]} == 0 )); then
+if (( ${#SEL_TOOLS[@]} == 0 && ${#SEL_EXTERNAL[@]} == 0 && ${#SEL_FAMILIES[@]} == 0 )); then
   info "Nothing selected."
   exit 0
 fi
@@ -135,6 +152,7 @@ fi
 echo
 info "Selected tools:    ${SEL_TOOLS[*]:-none}"
 info "Selected families: ${SEL_FAMILIES[*]:-none}"
+info "Selected external:  ${SEL_EXTERNAL[*]:-none}"
 
 if (( ASSUME_YES == 0 && DRY_RUN == 0 )); then
   if [[ -t 0 ]]; then
@@ -165,6 +183,11 @@ if (( ${#SEL_FAMILIES[@]} > 0 )); then
   [[ -t 0 ]] || skill_args+=(--no-prompt)
   info "Skills"
   "$INSTALLER" ${skill_args[@]+"${skill_args[@]}"}
+fi
+
+if (( ${#SEL_EXTERNAL[@]} > 0 )); then
+  info "External skills"
+  "$EXTERNAL" install --only "$(join "${SEL_EXTERNAL[@]}")" --yes ${common[@]+"${common[@]}"}
 fi
 
 info "Done."
