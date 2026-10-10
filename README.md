@@ -72,11 +72,14 @@ Meetings generate decisions and action items that get lost in memory. The `meet`
 
 ## Setup
 
+Agents working in this repo should read [AGENTS.md](AGENTS.md).
+
 `setup.sh` is the single entry point. It lists the harness tools (T3 Code, Claude Code, Codex, Cursor CLI, Gentle AI, Engram) and the skill families, lets you pick what you want, and delegates to the two scripts below.
 
 ```bash
 ./setup.sh                                   # interactive menu (numbers or names; Enter cancels)
-./setup.sh --list                            # tools with install status, and skill families
+./setup.sh --list                            # tools with install status, external skills and skill families
+./setup.sh --list external                   # only the external skills (also: tools, families)
 ./setup.sh --only claude-code,gentle-ai,ops  # non-interactive: tool ids and/or family names
 ./setup.sh --only harness --dry-run          # preview without changing anything
 ./setup.sh --only diagram-design             # a third-party skill from the external catalog
@@ -95,6 +98,8 @@ Third-party skill repositories live in [`external/catalog.tsv`](external/catalog
 ./install-external.sh agents                         # harnesses detected on this machine
 ./install-external.sh install --only diagram-design  # asks for confirmation; --dry-run previews
 ```
+
+To try one from the menu, run `./setup.sh`, type its number (or name), and confirm; to preview first, add `--dry-run`. `./setup.sh --list external` shows only the external skills.
 
 To add a repository, append a line to the catalog. A third-party skill adds instructions (and sometimes scripts) that your agents follow, so review a repository before listing it. Skill-only installs do not include a repository's Claude Code plugin commands.
 
