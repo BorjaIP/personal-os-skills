@@ -79,13 +79,28 @@ Meetings generate decisions and action items that get lost in memory. The `meet`
 ./setup.sh --list                            # tools with install status, and skill families
 ./setup.sh --only claude-code,gentle-ai,ops  # non-interactive: tool ids and/or family names
 ./setup.sh --only harness --dry-run          # preview without changing anything
+./setup.sh --only diagram-design             # a third-party skill from the external catalog
 ```
 
 Without a terminal (an agent, CI) it refuses to run without `--only`, and asks for `--yes` to confirm. From Claude, run `./setup.sh --list`, ask which items you want, then run `./setup.sh --only <ids> --yes`.
 
+## External skills
+
+Third-party skill repositories live in [`external/catalog.tsv`](external/catalog.tsv): one line per repository (id, `owner/repo`, skills, license, description). Nothing is installed until you pick it, from the `setup.sh` menu or with `--only <id>`. The first entry is [diagram-design](https://github.com/cathrynlavery/diagram-design).
+
+`install-external.sh` detects the harnesses present on the machine (Claude Code, Cursor, Gemini CLI, OpenCode, GitHub Copilot, Codex, Windsurf) and installs the selected skills globally into all of them through the [`skills` CLI](https://github.com/vercel-labs/skills), pinned to a fixed version in the script.
+
+```bash
+./install-external.sh list                           # catalog, install status, license, source
+./install-external.sh agents                         # harnesses detected on this machine
+./install-external.sh install --only diagram-design  # asks for confirmation; --dry-run previews
+```
+
+To add a repository, append a line to the catalog. A third-party skill adds instructions (and sometimes scripts) that your agents follow, so review a repository before listing it. Skill-only installs do not include a repository's Claude Code plugin commands.
+
 ## Harness bootstrap
 
-`setup.sh` calls two scripts that also work on their own:
+`setup.sh` calls three scripts that also work on their own (`install-external.sh` is described above):
 
 - `install.sh` installs the personal skills into the user-level Claude Code and Cursor directories, with optional Obsidian path configuration.
 - `bootstrap-harness.sh` installs and configures the surrounding AI coding harness: T3 Code, Claude Code, Codex CLI, Cursor CLI, Gentle AI, and Engram.

@@ -15,7 +15,7 @@ harness's global skills directory; we keep only the catalog, harness detection a
 ## Tasks
 - [x] T1 catalog + `install-external.sh` (`list`, `install --only`, harness detection, pinned CLI, `--dry-run`)
 - [x] T2 `setup.sh` integration: External section in menu, `--list`, `--only <id>`
-- [ ] T3 stack-updater (list/update external skills) + README docs
+- [x] T3 stack-updater (list/update external skills) + README docs
 
 ## Route
 Inline: context already loaded; shell scripts verified with dry-run and `skills add --list`.
@@ -26,3 +26,4 @@ No test runner for shell: `bash -n`, dry-run command inspection, `skills add --l
 ## Progress
 - T1 done: `external/catalog.tsv` (diagram-design) and `install-external.sh` (`list`, `agents`, `install --only`, confirmation, `--dry-run`, pinned `skills@1.7.2`). Checks: `bash -n`, list/agents/guards/dry-run, and `npx skills@1.7.2 add cathrynlavery/diagram-design --list` found 1 skill `diagram-design` (nothing installed). Detected harnesses here: claude-code, cursor, gemini-cli.
 - T2 done: `setup.sh` loads `install-external.sh list`, shows an External section, resolves numbers/names, delegates with `--yes` after its own confirmation. Checks: `bash -n`, `--list`, mixed dry-run (family + external), pty menu cancel, no-tty guard exit 2.
+- T3 done: stack-updater gate/step/reference for external skills (latest `unknown`, update only on approval); README External skills section and entry-point note. Checks: placeholder regex scan of the skill, `bash -n` of all scripts.
