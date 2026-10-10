@@ -15,7 +15,7 @@ Option A: thin dispatcher over `bootstrap-harness.sh` and `install.sh`. Both kee
 ## Tasks
 - [x] T1 bootstrap-harness: `--only`, `list` command, `install` respects selected components (fixes: installs CLIs not requested)
 - [x] T2 setup.sh: `--list`, interactive menu, `--only` mixing tool ids and skill families, `--dry-run`/`--yes`/`--preset` passthrough
-- [ ] T3 docs: README setup section, stack-updater rule points to setup.sh
+- [x] T3 docs: README setup section, stack-updater rule points to setup.sh
 
 ## Route
 Inline for all tasks: context already loaded, no research needed, files are
@@ -29,3 +29,4 @@ Shell scripts without a runner: `bash -n` plus dry-run and pty checks (no RED/GR
 - T1 done: `--only`, `list`, install/configure honour selected components; Node check only when t3/codex selected. Checks: `bash -n`, dry-runs for list, unknown component, --only subsets, configure agent targeting. Note: local Node 23.4.0 fails the T3 requirement (pre-existing).
 - T1 commit: `feat(bootstrap): select components with --only and add a list command`
 - T2 done: `setup.sh` (`--list`, `--only`, menu by number or name, confirm, `--yes`/`--dry-run`/`--preset`, exit 2 without selection). Checks: `bash -n`, list, no-tty guard, bad token, mixed dry-run, pty menu (cancel, Enter, names).
+- T3 done: README Setup section and bootstrap `--only`/`list` notes; stack-updater rules and gates point to `setup.sh` (and `install.sh --family` for re-render). Check: grep of every `install.sh` mention in the skill.

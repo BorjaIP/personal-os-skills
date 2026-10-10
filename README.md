@@ -70,14 +70,27 @@ Meetings generate decisions and action items that get lost in memory. The `meet`
 
 ---
 
+## Setup
+
+`setup.sh` is the single entry point. It lists the harness tools (T3 Code, Claude Code, Codex, Cursor CLI, Gentle AI, Engram) and the skill families, lets you pick what you want, and delegates to the two scripts below.
+
+```bash
+./setup.sh                                   # interactive menu (numbers or names; Enter cancels)
+./setup.sh --list                            # tools with install status, and skill families
+./setup.sh --only claude-code,gentle-ai,ops  # non-interactive: tool ids and/or family names
+./setup.sh --only harness --dry-run          # preview without changing anything
+```
+
+Without a terminal (an agent, CI) it refuses to run without `--only`, and asks for `--yes` to confirm. From Claude, run `./setup.sh --list`, ask which items you want, then run `./setup.sh --only <ids> --yes`.
+
 ## Harness bootstrap
 
-This repository contains two independent entry points:
+`setup.sh` calls two scripts that also work on their own:
 
 - `install.sh` installs the personal skills into the user-level Claude Code and Cursor directories, with optional Obsidian path configuration.
 - `bootstrap-harness.sh` installs and configures the surrounding AI coding harness: T3 Code, Claude Code, Codex CLI, Cursor CLI, Gentle AI, and Engram.
 
-The harness bootstrap does not install or configure skills, does not initialise a project, and does not write configuration into repositories. It configures Gentle AI globally with the `full-gentleman` preset, which provides Engram, Context7, GGA, skills, permissions, persona, and theme. Use `--preset minimal` (or `HARNESS_GENTLE_PRESET`) for a lighter setup. `configure` only targets agents whose CLI is installed and reports the rest. Graphify and CodeGraph remain separate options.
+The harness bootstrap does not install or configure skills, does not initialise a project, and does not write configuration into repositories. It configures Gentle AI globally with the `full-gentleman` preset, which provides Engram, Context7, GGA, skills, permissions, persona, and theme. Use `--preset minimal` (or `HARNESS_GENTLE_PRESET`) for a lighter setup. `configure` only targets agents whose CLI is installed and reports the rest. `--only t3,claude-code,codex,cursor,gentle-ai,engram` restricts `install` and `configure` to those components, and `./bootstrap-harness.sh list` prints their status. Graphify and CodeGraph remain separate options.
 
 On macOS, the bootstrap also trusts `gentleman-programming/tap` before installing the Gentleman Programming Homebrew packages.
 
