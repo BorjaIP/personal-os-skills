@@ -14,6 +14,9 @@ readonly HARNESS_BIN_DIR="${HARNESS_HOME}/.local/bin"
 
 COMMAND="all"
 AGENT_TARGETS="${HARNESS_AGENTS:-claude-code,codex,cursor}"
+AGENTS_EXPLICIT=0
+[[ -n "${HARNESS_AGENTS:-}" ]] && AGENTS_EXPLICIT=1
+ONLY_COMPONENTS=""
 GENTLE_PRESET="${HARNESS_GENTLE_PRESET:-full-gentleman}"
 DRY_RUN=0
 ASSUME_YES=0
@@ -42,17 +45,22 @@ die() {
 usage() {
   cat <<'EOF'
 Usage:
-  ./bootstrap-harness.sh [all|install|configure|doctor] [options]
+  ./bootstrap-harness.sh [all|install|configure|doctor|list] [options]
 
 Commands:
   all              Install, configure and verify everything. Default.
   install          Install missing T3, agent CLIs, Gentle AI and Engram.
   configure        Configure Gentle AI globally for the selected agents.
   doctor           Run read-only checks and Gentle AI diagnostics.
+  list             Print components and whether each is installed (tab-separated).
 
 Options:
   --agents LIST    Gentle AI agent IDs, comma-separated.
                    Default: claude-code,codex,cursor
+  --only LIST      Act only on these components, comma-separated:
+                   t3, claude-code, codex, cursor, gentle-ai, engram.
+                   Without it, the default set is t3, gentle-ai, engram and
+                   the CLIs listed in --agents.
   --preset NAME    Gentle AI preset. Default: full-gentleman
                    (Engram, Context7, GGA, skills, permissions, persona, theme.
                    Other presets: minimal, ecosystem-only.)
@@ -69,11 +77,30 @@ Examples:
   ./bootstrap-harness.sh all --update
   ./bootstrap-harness.sh all --update --yes
   HARNESS_AGENTS=claude-code,codex ./bootstrap-harness.sh configure
+  ./bootstrap-harness.sh install --only claude-code,gentle-ai
+  ./bootstrap-harness.sh list
 EOF
 }
 
 has_command() {
   command -v "$1" >/dev/null 2>&1
+}
+
+ALL_COMPONENTS="t3 claude-code codex cursor gentle-ai engram"
+
+in_csv() { case ",$2," in *",$1,"*) return 0 ;; *) return 1 ;; esac; }
+
+# Whether a component is part of this run (--only wins; otherwise the default set).
+component_enabled() {
+  if [[ -n "$ONLY_COMPONENTS" ]]; then
+    in_csv "$1" "$ONLY_COMPONENTS"
+    return
+  fi
+  case "$1" in
+    t3) (( INSTALL_T3 == 1 )) ;;
+    gentle-ai|engram) return 0 ;;
+    *) in_csv "$1" "$AGENT_TARGETS" ;;
+  esac
 }
 
 print_command() {
@@ -200,6 +227,11 @@ ensure_base_dependencies() {
 
   has_command git || die "Git is required. On macOS install Xcode Command Line Tools with: xcode-select --install"
   has_command curl || die "curl is required to install the official CLIs."
+
+  if ! component_enabled t3 && ! component_enabled codex; then
+    ok "Git and curl are available; Node.js is not needed for the selected components."
+    return 0
+  fi
 
   if ! has_command node || ! node_meets_t3_requirement; then
     if [[ "$PLATFORM" == "macos" ]]; then
@@ -367,12 +399,12 @@ install_engram() {
 install_all() {
   confirm_install || die "Installation cancelled."
   ensure_base_dependencies
-  install_t3
-  install_claude
-  install_codex
-  install_cursor
-  install_gentle_ai
-  install_engram
+  component_enabled t3 && install_t3
+  component_enabled claude-code && install_claude
+  component_enabled codex && install_codex
+  component_enabled cursor && install_cursor
+  component_enabled gentle-ai && install_gentle_ai
+  component_enabled engram && install_engram
   ok "Tool installation completed."
 }
 
@@ -404,6 +436,11 @@ filter_installed_agents() {
 }
 
 configure_gentle_ai() {
+  if ! component_enabled gentle-ai; then
+    info "Gentle AI is not selected; skipping configuration."
+    return 0
+  fi
+
   if ! has_command gentle-ai && (( DRY_RUN == 0 )); then
     die "Gentle AI is not installed. Run first: $SCRIPT_NAME install"
   fi
@@ -497,6 +534,36 @@ doctor() {
   fi
 }
 
+component_status() {
+  case "$1" in
+    t3)
+      if [[ "$PLATFORM" == "macos" ]] && { brew_cask_installed t3-code || [[ -d "/Applications/T3 Code.app" ]]; }; then
+        printf 'installed'
+      elif [[ "$PLATFORM" == "macos" ]]; then printf 'missing'
+      else printf 'npx'; fi ;;
+    *)
+      if has_command "$(agent_cli_name "$1")"; then printf 'installed'; else printf 'missing'; fi ;;
+  esac
+}
+
+component_label() {
+  case "$1" in
+    t3) printf 'T3 Code (macOS app; on Linux runs through npx)' ;;
+    claude-code) printf 'Claude Code CLI' ;;
+    codex) printf 'Codex CLI' ;;
+    cursor) printf 'Cursor CLI (cursor-agent)' ;;
+    gentle-ai) printf 'Gentle AI (configured with the selected preset)' ;;
+    engram) printf 'Engram persistent memory' ;;
+  esac
+}
+
+list_components() {
+  local id IFS=' '
+  for id in $ALL_COMPONENTS; do
+    printf '%s\t%s\t%s\n' "$id" "$(component_status "$id")" "$(component_label "$id")"
+  done
+}
+
 parse_args() {
   if [[ $# -gt 0 && "$1" != --* ]]; then
     COMMAND="$1"
@@ -508,6 +575,12 @@ parse_args() {
       --agents|--agent)
         [[ $# -ge 2 ]] || die "Missing value for $1"
         AGENT_TARGETS="$2"
+        AGENTS_EXPLICIT=1
+        shift 2
+        ;;
+      --only)
+        [[ $# -ge 2 ]] || die "Missing value for --only"
+        ONLY_COMPONENTS="$2"
         shift 2
         ;;
       --preset)
@@ -542,9 +615,25 @@ parse_args() {
   done
 
   case "$COMMAND" in
-    all|install|configure|doctor) ;;
+    all|install|configure|doctor|list) ;;
     *) die "Unknown command: $COMMAND" ;;
   esac
+
+  local item items=()
+  IFS=',' read -r -a items <<< "$ONLY_COMPONENTS"
+  for item in "${items[@]:-}"; do
+    [[ -n "$item" ]] || continue
+    [[ " $ALL_COMPONENTS " == *" $item "* ]] || die "Unknown component '$item'. Available: ${ALL_COMPONENTS// /, }"
+  done
+
+  # With --only and no explicit --agents, configure exactly the selected agent CLIs.
+  if [[ -n "$ONLY_COMPONENTS" ]] && (( AGENTS_EXPLICIT == 0 )); then
+    local agents=()
+    for item in claude-code codex cursor; do
+      in_csv "$item" "$ONLY_COMPONENTS" && agents+=("$item")
+    done
+    AGENT_TARGETS="$(IFS=,; echo "${agents[*]:-}")"
+  fi
 }
 
 main() {
@@ -564,6 +653,10 @@ main() {
       ;;
     doctor)
       doctor
+      ;;
+    list)
+      list_components
+      exit 0
       ;;
   esac
 

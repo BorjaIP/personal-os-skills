@@ -20,7 +20,7 @@ Load when the user asks whether anything installed by this repo can be updated: 
 - Never invent a "latest" version; report `unknown`.
 - Never touch project repositories. Write only to `~/.config/personal-os-skills/stack.yaml`, and only when the user names a new item.
 - Stay terse: no installation suggestions, no unrelated tooling.
-- Before running `./install.sh`, run `./install.sh --list`, ask the user which families to install, and pass `--family`. Never run it without an explicit selection.
+- Before installing anything, run `./setup.sh --list`, ask the user which tools and families they want, then run `./setup.sh --only <ids> --yes`. Never run `setup.sh`, `install.sh` or `bootstrap-harness.sh` without an explicit selection.
 
 ## Decision Gates
 
@@ -28,10 +28,10 @@ Load when the user asks whether anything installed by this repo can be updated: 
 |-----------|--------|
 | Gentle AI, Engram, GGA | Use `gentle-ai update` for installed vs latest; apply with `gentle-ai upgrade` |
 | Claude / Cursor / Codex | Source-specific command in `references/update-commands.md` |
-| Repo `behind` > 0 | `git pull --ff-only`, then `./install.sh --no-prompt` to re-render placeholder skills |
+| Repo `behind` > 0 | `git pull --ff-only`, then `./install.sh --no-prompt --family <families already installed>` to re-render placeholder skills |
 | Repo `dirty` > 0 | Report it; do not pull until the user decides |
-| Skill `missing` for a detected harness | Report names in one line; install only via `./install.sh` on approval |
-| Skill `copy` with placeholders | Needs `./install.sh` after a pull to refresh |
+| Skill `missing` for a detected harness | Report names in one line; install only via `./setup.sh --only <family>` on approval |
+| Skill `copy` with placeholders | Re-run `./install.sh --no-prompt --family <its family>` after a pull to refresh |
 | `source` = unknown | Report; do not guess a manager |
 | Update fails | Stop that item, show output, continue the rest |
 
