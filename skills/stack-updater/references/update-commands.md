@@ -26,6 +26,7 @@
 | Cursor CLI | `cursor-agent --version` | `cursor-agent update` |
 | Codex CLI | `npm outdated -g @openai/codex` | `npm install -g @openai/codex@latest` |
 | Engram | `engram version` | brew: `brew upgrade gentleman-programming/tap/engram`; else `go install github.com/Gentleman-Programming/engram/cmd/engram@latest` |
+| External skill (skills CLI) | `./install-external.sh list` (installed or missing; latest unknown) | `npx --yes skills@1.7.2 update -g <skill>` |
 | Skill repo (git) | `git -C <path> fetch && git -C <path> rev-list --count HEAD..@{u}` | `git -C <path> pull --ff-only`, then `./install.sh` if skills use placeholders |
 
 ## Distro handling

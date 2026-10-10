@@ -1,0 +1,5 @@
+# External skills catalog: third-party repositories whose skills can be installed on demand.
+# Columns (tab-separated): id, source (owner/repo), skills (comma-separated names or *), license, description.
+# Add a line per repository. Nothing here is installed until you select it.
+diagram-design	cathrynlavery/diagram-design	diagram-design	MIT	Editorial HTML/SVG diagrams, 44 types (architecture, flowchart, sequence, ER, Gantt, ...)
+claude-api	anthropics/skills	claude-api	Apache-2.0	Claude API and Anthropic SDK reference; includes the prompt-audit subcommand (shared/prompt-audit.md)

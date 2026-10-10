@@ -22,6 +22,7 @@ DRY_RUN=0
 ASSUME_YES=0
 UPDATE_REQUESTED=0
 INSTALL_T3=1
+INSTALL_PI=1
 
 export PATH="${HARNESS_BIN_DIR}:${PATH}"
 
@@ -58,7 +59,7 @@ Options:
   --agents LIST    Gentle AI agent IDs, comma-separated.
                    Default: claude-code,codex,cursor
   --only LIST      Act only on these components, comma-separated:
-                   t3, claude-code, codex, cursor, gentle-ai, engram.
+                   t3, claude-code, codex, cursor, gentle-ai, engram, pi.
                    Without it, the default set is t3, gentle-ai, engram and
                    the CLIs listed in --agents.
   --preset NAME    Gentle AI preset. Default: full-gentleman
@@ -67,6 +68,7 @@ Options:
   --update         Ask whether to update each installed tool.
                    Without this flag, installed tools are left unchanged.
   --without-t3     Skip T3 installation.
+  --without-pi     Skip Pi installation.
   --yes, -y        Do not ask before installing or updating packages.
   --dry-run        Print planned actions without changing the machine.
   --help, -h       Show this help.
@@ -86,7 +88,7 @@ has_command() {
   command -v "$1" >/dev/null 2>&1
 }
 
-ALL_COMPONENTS="t3 claude-code codex cursor gentle-ai engram"
+ALL_COMPONENTS="t3 claude-code codex cursor gentle-ai engram pi"
 
 in_csv() { case ",$2," in *",$1,"*) return 0 ;; *) return 1 ;; esac; }
 
@@ -98,6 +100,7 @@ component_enabled() {
   fi
   case "$1" in
     t3) (( INSTALL_T3 == 1 )) ;;
+    pi) (( INSTALL_PI == 1 )) ;;
     gentle-ai|engram) return 0 ;;
     *) in_csv "$1" "$AGENT_TARGETS" ;;
   esac
@@ -368,6 +371,21 @@ install_gentle_ai() {
   fi
 }
 
+install_pi() {
+  if has_command pi; then
+    ok "Pi is already installed ($(pi --version 2>/dev/null || echo 'unknown version'))."
+    return 0
+  fi
+  info "Installing Pi (https://pi.dev)..."
+  if [[ "$PLATFORM" == "macos" ]] && has_command brew; then
+    # Pi distributes via its own installer; brew is not available yet.
+    run_cmd curl -fsSL https://pi.dev/install.sh \| sh
+  else
+    run_cmd curl -fsSL https://pi.dev/install.sh \| sh
+  fi
+  ok "Pi installed."
+}
+
 install_engram() {
   if [[ "$PLATFORM" == "macos" ]] && brew_formula_installed engram; then
     ensure_homebrew
@@ -405,6 +423,7 @@ install_all() {
   component_enabled cursor && install_cursor
   component_enabled gentle-ai && install_gentle_ai
   component_enabled engram && install_engram
+  component_enabled pi && install_pi
   ok "Tool installation completed."
 }
 
@@ -541,6 +560,8 @@ component_status() {
         printf 'installed'
       elif [[ "$PLATFORM" == "macos" ]]; then printf 'missing'
       else printf 'npx'; fi ;;
+    pi)
+      if has_command pi; then printf 'installed'; else printf 'missing'; fi ;;
     *)
       if has_command "$(agent_cli_name "$1")"; then printf 'installed'; else printf 'missing'; fi ;;
   esac
@@ -554,6 +575,7 @@ component_label() {
     cursor) printf 'Cursor CLI (cursor-agent)' ;;
     gentle-ai) printf 'Gentle AI (configured with the selected preset)' ;;
     engram) printf 'Engram persistent memory' ;;
+    pi) printf 'Pi coding agent harness' ;;
   esac
 }
 
@@ -594,6 +616,9 @@ parse_args() {
         ;;
       --without-t3)
         INSTALL_T3=0
+        ;;
+      --without-pi)
+        INSTALL_PI=0
         shift
         ;;
       --yes|-y)

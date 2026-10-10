@@ -9,7 +9,7 @@ metadata:
 
 ## Activation Contract
 
-Load when the user asks whether anything installed by this repo can be updated: bootstrap tools (Claude Code, Codex, Cursor CLI, Gentle AI, Engram), Gentle AI-managed tools, or the skills in this repository. Also load when the user names a new tool or repo to track.
+Load when the user asks whether anything installed by this repo can be updated: bootstrap tools (Claude Code, Codex, Cursor CLI, Gentle AI, Engram), Gentle AI-managed tools, the skills in this repository, or external (third-party) skills installed from `external/catalog.tsv`. Also load when the user names a new tool or repo to track.
 
 ## Hard Rules
 
@@ -28,6 +28,7 @@ Load when the user asks whether anything installed by this repo can be updated: 
 |-----------|--------|
 | Gentle AI, Engram, GGA | Use `gentle-ai update` for installed vs latest; apply with `gentle-ai upgrade` |
 | Claude / Cursor / Codex | Source-specific command in `references/update-commands.md` |
+| External skill installed | Status from `./install-external.sh list` (run from the repo root); latest is `unknown` because the skills CLI has no check-only mode. Update only on approval: `npx --yes skills@1.7.2 update -g <skill>` |
 | Repo `behind` > 0 | `git pull --ff-only`, then `./install.sh --no-prompt --family <families already installed>` to re-render placeholder skills |
 | Repo `dirty` > 0 | Report it; do not pull until the user decides |
 | Skill `missing` for a detected harness | Report names in one line; install only via `./setup.sh --only <family>` on approval |
@@ -37,7 +38,7 @@ Load when the user asks whether anything installed by this repo can be updated: 
 
 ## Execution Steps
 
-1. Run `bash assets/scan.sh` (path relative to this skill) and `gentle-ai update` when `gentle-ai` is present.
+1. Run `bash assets/scan.sh` (path relative to this skill), `gentle-ai update` when `gentle-ai` is present, and `./install-external.sh list` from the repo root.
 2. Merge extra items from `~/.config/personal-os-skills/stack.yaml` if it exists.
 3. Build the report; consider cursor skills only if `~/.cursor` exists.
 4. Show it, then ask once: update all / pick / none. STOP and wait.
