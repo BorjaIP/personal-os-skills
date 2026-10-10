@@ -1,0 +1,15 @@
+# ~/.config/personal-os-skills/stack.yaml
+# Extra items the scanner cannot auto-detect. Built-in harnesses and tools
+# (claude, codex, cursor-agent, opencode, gemini, gentle-ai, engram, ...) are
+# found by assets/scan.sh and need no entry here.
+items:
+  - name: personal-os-skills
+    kind: skill-repo            # skill-repo | plugin | mcp | cli
+    path: ~/projects/personal-os-skills
+    update: git pull --ff-only && ./install.sh
+  - name: claude-hud
+    kind: plugin
+    source: claude-marketplace  # updated via: claude plugin marketplace update claude-hud
+  - name: some-new-cli
+    kind: cli
+    binary: some-new-cli        # resolved with command -v, source auto-detected
