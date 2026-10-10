@@ -35,6 +35,7 @@ gemini-cli|gemini|$HOME/.gemini|$HOME/.gemini/skills
 opencode|opencode|$HOME/.config/opencode|$HOME/.config/opencode/skills
 github-copilot|copilot|$HOME/.copilot|$HOME/.copilot/skills
 codex|codex|$HOME/.codex|$HOME/.agents/skills
+pi|pi|$HOME/.pi|$HOME/.agents/skills
 windsurf|windsurf|$HOME/.codeium/windsurf|$HOME/.codeium/windsurf/skills
 EOF
 }

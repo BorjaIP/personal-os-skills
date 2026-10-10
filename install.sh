@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install personal skills into Claude Code and/or Cursor user-level skill directories.
+# Install personal skills into Claude Code, Cursor and/or Pi user-level skill directories.
 #
 # Skills can contain {{PLACEHOLDER}} tokens. When any file inside a skill contains
 # placeholders, the whole skill directory is rendered (copied with substitutions)
@@ -9,7 +9,8 @@
 # Usage:
 #   ./install.sh                       # interactive install, prompts for Obsidian paths
 #   ./install.sh --claude-only         # only install into ~/.claude/skills
-#   ./install.sh --cursor-only         # only install into ~/.cursor/skills-cursor
+#   ./install.sh --cursor-only         # only install into ~/.cursor/skills
+#   ./install.sh --pi-only             # only install into ~/.agents/skills (Pi)
 #   ./install.sh --copy                # copy instead of symlink (even when no placeholders)
 #   ./install.sh --uninstall           # remove entries installed by this script
 #   ./install.sh --dry-run             # show actions without performing them
@@ -34,12 +35,15 @@ CLAUDE_DEST="$HOME/.claude/skills"
 # NEVER use ~/.cursor/skills-cursor/ — that path is managed by Cursor for
 # built-in skills and user-placed files there can be clobbered.
 CURSOR_DEST="$HOME/.cursor/skills"
+# Pi reads from the Agent Skills shared location used by several harnesses.
+PI_DEST="$HOME/.agents/skills"
 
 CONFIG_DIR="$HOME/.config/personal-os-skills"
 CONFIG_FILE="$CONFIG_DIR/config.env"
 
 INSTALL_CLAUDE=1
 INSTALL_CURSOR=1
+INSTALL_PI=1
 MODE="symlink"     # symlink | copy
 ACTION="install"   # install | uninstall
 DRY_RUN=0
@@ -70,8 +74,10 @@ usage() {
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --claude-only) INSTALL_CURSOR=0 ;;
-    --cursor-only) INSTALL_CLAUDE=0 ;;
+    --claude-only) INSTALL_CURSOR=0; INSTALL_PI=0 ;;
+    --cursor-only) INSTALL_CLAUDE=0; INSTALL_PI=0 ;;
+    --pi-only)     INSTALL_CLAUDE=0; INSTALL_CURSOR=0 ;;
+    --no-pi)       INSTALL_PI=0 ;;
     --copy)        MODE="copy" ;;
     --uninstall)   ACTION="uninstall" ;;
     --dry-run)     DRY_RUN=1 ;;
@@ -116,7 +122,11 @@ detect_harnesses() {
     INSTALL_CURSOR=0
     info "Cursor not detected: skipping $CURSOR_DEST"
   fi
-  if [[ "$INSTALL_CLAUDE" -eq 0 && "$INSTALL_CURSOR" -eq 0 ]]; then
+  if [[ "$INSTALL_PI" -eq 1 ]] && ! harness_present pi "$HOME/.pi"; then
+    INSTALL_PI=0
+    info "Pi not detected: skipping $PI_DEST"
+  fi
+  if [[ "$INSTALL_CLAUDE" -eq 0 && "$INSTALL_CURSOR" -eq 0 && "$INSTALL_PI" -eq 0 ]]; then
     warn "No supported harness detected; nothing to install."
     exit 0
   fi
@@ -682,10 +692,12 @@ for skill_path in "${SKILLS[@]}"; do
     info "Installing $skill_name"
     [[ "$INSTALL_CLAUDE" -eq 1 ]] && install_skill "$skill_path" "$CLAUDE_DEST" "$skill_name"
     [[ "$INSTALL_CURSOR" -eq 1 ]] && install_skill "$skill_path" "$CURSOR_DEST" "$skill_name"
+    [[ "$INSTALL_PI" -eq 1 ]] && install_skill "$skill_path" "$PI_DEST" "$skill_name"
   else
     info "Uninstalling $skill_name"
     [[ "$INSTALL_CLAUDE" -eq 1 ]] && uninstall_skill "$CLAUDE_DEST" "$skill_name" "$skill_path"
     [[ "$INSTALL_CURSOR" -eq 1 ]] && uninstall_skill "$CURSOR_DEST" "$skill_name" "$skill_path"
+    [[ "$INSTALL_PI" -eq 1 ]] && uninstall_skill "$PI_DEST" "$skill_name" "$skill_path"
   fi
 done
 
