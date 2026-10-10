@@ -4,7 +4,7 @@
 #
 # Usage:
 #   ./setup.sh                                  # interactive menu
-#   ./setup.sh --list                           # print tools and skill families, then exit
+#   ./setup.sh --list [tools|external|families] # print the catalog (or one section), then exit
 #   ./setup.sh --only claude-code,gentle-ai,ops # non-interactive: tool ids and/or family names
 #   ./setup.sh --only harness --dry-run         # preview without changing anything
 #   ./setup.sh --only diagram-design            # third-party skill from external/catalog.tsv
@@ -30,12 +30,13 @@ PRESET=""
 ASSUME_YES=0
 DRY_RUN=0
 LIST_ONLY=0
+LIST_SECTION=all
 
 err()  { printf 'xx %s\n' "$*" >&2; }
 info() { printf '==> %s\n' "$*"; }
 
 usage() {
-  sed -n '2,18p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,19p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
   exit "${1:-0}"
 }
 
@@ -45,7 +46,8 @@ while [[ $# -gt 0 ]]; do
     --preset)  [[ $# -ge 2 ]] || { err "Missing value for --preset"; exit 1; }; PRESET="$2"; shift ;;
     --yes|-y)  ASSUME_YES=1 ;;
     --dry-run) DRY_RUN=1 ;;
-    --list)    LIST_ONLY=1 ;;
+    --list)    LIST_ONLY=1
+               if [[ $# -ge 2 && "$2" != -* ]]; then LIST_SECTION="$2"; shift; fi ;;
     -h|--help) usage 0 ;;
     *)         err "Unknown argument: $1"; usage 1 ;;
   esac
@@ -74,23 +76,26 @@ while IFS= read -r line; do
   fi
 done < <("$INSTALLER" --list)
 
-print_catalog() {
-  local i n=1
-  echo "Tools"
+print_catalog() { # $1 = all | tools | external | families (numbers match the interactive menu)
+  local want="${1:-all}" i n=1 show
+  show() { [[ "$want" == all || "$want" == "$1" ]]; }
+
+  show tools && echo "Tools"
   for i in "${!TOOL_IDS[@]}"; do
-    printf '  %2d) %-12s %-10s %s\n' "$n" "${TOOL_IDS[$i]}" "${TOOL_STATUS[$i]}" "${TOOL_LABEL[$i]}"
+    show tools && printf '  %2d) %-12s %-10s %s\n' "$n" "${TOOL_IDS[$i]}" "${TOOL_STATUS[$i]}" "${TOOL_LABEL[$i]}"
     n=$((n + 1))
   done
-  echo "External skills (third-party)"
-  for i in "${!EXT_IDS[@]}"; do
-    printf '  %2d) %-16s %-10s %s\n' "$n" "${EXT_IDS[$i]}" "${EXT_STATUS[$i]}" "${EXT_LABEL[$i]}"
+  show external && echo "External skills (third-party)"
+  for i in ${EXT_IDS[@]+"${!EXT_IDS[@]}"}; do
+    show external && printf '  %2d) %-16s %-10s %s\n' "$n" "${EXT_IDS[$i]}" "${EXT_STATUS[$i]}" "${EXT_LABEL[$i]}"
     n=$((n + 1))
   done
-  echo "Skill families"
+  show families && echo "Skill families"
   for i in "${!FAMILY_IDS[@]}"; do
-    printf '  %2d) %-12s %s\n' "$n" "${FAMILY_IDS[$i]}" "${FAMILY_SKILLS[$i]}"
+    show families && printf '  %2d) %-12s %s\n' "$n" "${FAMILY_IDS[$i]}" "${FAMILY_SKILLS[$i]}"
     n=$((n + 1))
   done
+  return 0
 }
 
 # Map one token (number or name) to a canonical tool id or family name.
@@ -106,7 +111,11 @@ resolve_token() {
 }
 
 if (( LIST_ONLY == 1 )); then
-  print_catalog
+  case "$LIST_SECTION" in
+    all|tools|external|families) ;;
+    *) err "Unknown list section '$LIST_SECTION'. Use: tools, external or families."; exit 1 ;;
+  esac
+  print_catalog "$LIST_SECTION"
   exit 0
 fi
 
