@@ -9,9 +9,9 @@ Personal collection of agent skills plus the scripts that install them and the s
 | `skills/<name>/SKILL.md` | The repo's own skills (plus optional `assets/`, `references/`) |
 | `external/catalog.tsv` | Third-party skill repositories that can be installed on demand |
 | `setup.sh` | Single entry point: menu and `--only` over the three scripts below |
-| `install.sh` | Installs this repo's skills by family into Claude Code and Cursor |
+| `install.sh` | Installs this repo's skills by family into Claude Code, Cursor and Pi |
 | `install-external.sh` | Installs catalog entries into every harness detected on the machine |
-| `bootstrap-harness.sh` | Installs and configures T3 Code, Claude Code, Codex, Cursor CLI, Gentle AI, Engram |
+| `bootstrap-harness.sh` | Installs and configures T3 Code, Claude Code, Codex, Cursor CLI, Pi, Gentle AI, Engram |
 | `odd/tasks/<feature>.md` | Tracking document for substantial work |
 | `docs/` | Per-area documentation |
 
@@ -25,11 +25,11 @@ Never install, update or configure anything without an explicit selection from t
 2. Ask which items the user wants.
 3. Run `./setup.sh --only <ids> --yes` (add `--dry-run` to preview).
 
-Without a terminal, `setup.sh`, `install.sh` and `install-external.sh` exit with code 2 if no selection is given. `bootstrap-harness.sh` without `--only` acts on its default set (T3, Gentle AI, Engram and the CLIs in `--agents`) after asking for confirmation, so pass `--only` when calling it directly.
+Without a terminal, `setup.sh`, `install.sh` and `install-external.sh` exit with code 2 if no selection is given. `bootstrap-harness.sh` without `--only` acts on its default set (T3, Pi, Gentle AI, Engram and the CLIs in `--agents`) after asking for confirmation, so pass `--only` when calling it directly.
 
 | Group | Examples | Handled by |
 |-------|----------|------------|
-| Tools | `t3`, `claude-code`, `codex`, `cursor`, `gentle-ai`, `engram` | `bootstrap-harness.sh` |
+| Tools | `t3`, `claude-code`, `codex`, `cursor`, `gentle-ai`, `engram`, `pi` | `bootstrap-harness.sh` |
 | External skills | `diagram-design` | `install-external.sh` |
 | Skill families | `kubernetes`, `datadog`, `ops`, `productivity`, `harness` | `install.sh` |
 
@@ -39,8 +39,8 @@ Families are mapped by skill name in `skill_family()` in `install.sh`; a new ski
 
 Scripts install only where a harness exists and report the rest.
 
-- `install.sh`: Claude Code (`claude` or `~/.claude`), Cursor (`cursor-agent` or `~/.cursor`).
-- `install-external.sh`: Claude Code, Cursor, Gemini CLI, OpenCode, GitHub Copilot, Codex, Windsurf. The table lives in `harness_table()`; add a harness there only after checking its global skills directory in the `skills` CLI README.
+- `install.sh`: Claude Code (`claude` or `~/.claude`), Cursor (`cursor-agent` or `~/.cursor`), Pi (`pi` or `~/.pi`, skills in `~/.agents/skills`).
+- `install-external.sh`: Claude Code, Cursor, Gemini CLI, OpenCode, GitHub Copilot, Codex, Pi, Windsurf. The table lives in `harness_table()`; add a harness there only after checking its global skills directory in the `skills` CLI README.
 - `bootstrap-harness.sh configure` targets only agents whose CLI is installed.
 
 ## External skills
