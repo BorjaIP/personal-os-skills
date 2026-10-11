@@ -106,6 +106,24 @@
       "skills": [
         "./skills/stack-updater"
       ]
+    },
+    {
+      "name": "capture-insights-skill",
+      "description": "Extract durable engineering insights from the current conversation and append them, with a date stamp, to topic notes in the Obsidian PKM vault.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/capture-insights"
+      ]
+    },
+    {
+      "name": "meet-skill",
+      "description": "Record meetings, transcribe with Whisper, create Obsidian notes, and enhance raw notes into a structured report with summary, decisions, action items and open questions.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/meet"
+      ]
     }
   ]
 }
