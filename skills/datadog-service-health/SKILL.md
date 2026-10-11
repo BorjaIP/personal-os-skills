@@ -9,7 +9,7 @@ description: Run a full Datadog APM health check for a service and produce a tri
 
 **This skill is read-only against Datadog.** All output lives **exclusively** in the Obsidian vault under `{{DATADOG_TRIAGE_DIR}}/`. Datadog itself is never written to.
 
-You **MUST NOT** call any of the following Datadog MCP tools, regardless of any legacy text further down in this document, "just one widget" reasoning, or caller request:
+You **MUST NOT** call any of the following Datadog MCP tools, regardless of "just one widget" reasoning or caller request:
 
 - `create_datadog_notebook` — never. This skill does not create notebooks.
 - `edit_datadog_notebook` — never as part of triage.
@@ -17,8 +17,6 @@ You **MUST NOT** call any of the following Datadog MCP tools, regardless of any 
 - `get_widget`, `validate_dashboard_widget`, `ask_widget_expert`, `get_widget_reference` — never. Findings are surfaced as live Datadog UI deep-links inside the Markdown report, not as embedded widgets.
 
 If you find yourself about to call any of the above: stop, re-read this block, and instead construct the equivalent Datadog UI URL (APM service, traces query, single trace, monitor, dashboard, event explorer) and put it in the Evidence table.
-
-The downstream `datadog-report-publisher` enforces the same constraints. If it ever drops a `notebook_cells` field you sent, that's the constraints working — do not retry.
 
 ---
 
@@ -177,7 +175,7 @@ Structure the evidence into the payload expected by `datadog-report-publisher`:
 
 - `scope`: `{ service, env, project: <team>, resource: <top-offending-resource>, severity, incident_id }`
 - `findings`:
-  - `Executive Summary`: 3–5 lines. State health verdict (healthy / degraded / broken), primary offending resource(s), likely cause class (timeout / 5xx / latency regression / capacity / downstream), whether a recent deploy correlates.
+  - `Executive Summary`: brief. State health verdict (healthy / degraded / broken), primary offending resource(s), likely cause class (timeout / 5xx / latency regression / capacity / downstream), whether a recent deploy correlates.
   - `Evidence`: every table row from Steps 2–7, with MCP tool, args summary, and **a Datadog UI deep-link** (APM service page, traces query, single-trace deep link, dashboard, monitor, event explorer). Every row must have a clickable URL — knowledge lives in Obsidian, but the live data lives one click away in Datadog.
   - `Timeline`: onset of regression, correlated events, first/last seen of key error.
   - `Root Cause`: if clear from the trace + deploy correlation; otherwise "unknown — see follow-ups".
@@ -188,8 +186,6 @@ Structure the evidence into the payload expected by `datadog-report-publisher`:
   - `Query Audit Trail`: all MCP calls from the running list.
 - `datadog_links`: 3–6 curated live Datadog UI URLs to surface in the MD header — typically the APM service page, the failing-traces query, the canonical trace deep-link, and any relevant dashboard / monitor.
 
-> Do **NOT** include `notebook_cells` in the payload. The publisher will silently drop it (per its Hard Constraints) and you will have wasted tokens.
-
 ### Step 9 — Publish
 
 Invoke the `datadog-report-publisher` skill with the payload. It will:
@@ -197,7 +193,7 @@ Invoke the `datadog-report-publisher` skill with the payload. It will:
 1. Write the MD to `{{DATADOG_TRIAGE_DIR}}/<YYYY-MM-DD>-<service>-<env>.md` with all evidence rows linking to live Datadog UI URLs.
 2. Return the file path.
 
-> **No Datadog notebook is created.** Knowledge lives in the Obsidian vault only; the MD's evidence table and `datadog_links` header give the reader one-click access to live charts in the Datadog UI.
+> Knowledge lives in the Obsidian vault; the MD's evidence table and `datadog_links` header give the reader one-click access to live charts in the Datadog UI.
 
 Present to the user with a 3-line summary:
 
@@ -245,9 +241,9 @@ Example filename produced: `2026-04-21-data-ai-studio-backend-staging.md`.
 
 1. **Baseline comparison is non-negotiable** — "p95 is 500ms" means nothing without knowing it was 120ms an hour ago.
 2. **Always drill one level**: aggregate → top offender → one raw span → one full trace. Do not stop at aggregates.
-3. **Correlate with deploys** — Step 7 catches >50% of real incidents in practice.
+3. **Correlate with deploys** — Step 7 checks for deploy and config-change events at the regression onset.
 4. **Monitor gap flagging** — if we had to find the regression manually, there's an observability gap worth naming.
-5. **Frozen artefact** — once published, do not mutate. If new evidence arrives, create a follow-up triage note and cross-link.
+5. **Frozen artefact** — once published, a triage note's evidence and analysis do not change; the only permitted edits are `status:` and a section appended at the bottom (Resolution, Promoted to runbook), per [docs/triage-architecture.md](../../docs/triage-architecture.md). If new evidence arrives, create a follow-up triage note and cross-link.
 
 ## Dependencies
 

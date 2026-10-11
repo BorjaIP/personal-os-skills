@@ -9,7 +9,7 @@ description: Investigate a Datadog metric spike, regression, or anomaly. Discove
 
 **This skill is read-only against Datadog.** All output lives **exclusively** in the Obsidian vault under `{{DATADOG_TRIAGE_DIR}}/`. Datadog itself is never written to.
 
-You **MUST NOT** call any of the following Datadog MCP tools, regardless of any legacy text further down in this document, "just one widget" reasoning, or caller request:
+You **MUST NOT** call any of the following Datadog MCP tools, regardless of "just one widget" reasoning or caller request:
 
 - `create_datadog_notebook` — never. This skill does not create notebooks.
 - `edit_datadog_notebook` — never as part of triage.
@@ -17,8 +17,6 @@ You **MUST NOT** call any of the following Datadog MCP tools, regardless of any 
 - `get_widget`, `validate_dashboard_widget`, `ask_widget_expert`, `get_widget_reference` — never. Findings are surfaced as live Datadog metric-explorer / dashboard deep-links inside the Markdown report, not as embedded widgets.
 
 If you find yourself about to call any of the above: stop, re-read this block, and instead construct the equivalent metric-explorer URL (`https://app.datadoghq.com/metric/explorer?query=<urlencoded>`) and put it in the Evidence table.
-
-The downstream `datadog-report-publisher` enforces the same constraints. If it ever drops a `notebook_cells` field you sent, that's the constraints working — do not retry.
 
 ---
 
@@ -136,7 +134,7 @@ For the same window, also fetch the **baseline window** (same expression, shifte
 - Baseline mean / p95 / max.
 - Delta and % change.
 
-If the delta on any series is > 50% → flag as "significant" in findings. If > 100% → flag as "critical".
+If the delta on any series is > 50% → flag as "significant" in findings. If > 100% → flag as "major". Derive the report `severity` from the Severity Guidance table, not from these flags.
 
 ### Step 4 — Build a Datadog metric-explorer deep-link for each informative query
 
@@ -185,7 +183,7 @@ Payload for `datadog-report-publisher`:
 
 - `scope`: `{ env (if single), service (if single), resource: <metric-name>, severity, incident_id }`
 - `findings`:
-  - `Executive Summary`: 3–5 lines. Current state, delta vs baseline, top offender slice(s), probable driver (load / capacity / downstream / config change), monitor coverage status.
+  - `Executive Summary`: brief. Current state, delta vs baseline, top offender slice(s), probable driver (load / capacity / downstream / config change), monitor coverage status.
   - `Evidence`: table (query expression → current value → baseline value → delta % → **metric-explorer URL or dashboard URL**). Every row must have a clickable Datadog deep-link.
   - `Timeline`: when the regression began, correlated events if any (from `search_datadog_events`).
   - `Root Cause`: if clear; otherwise "hypothesis: X — see follow-ups".
@@ -196,11 +194,9 @@ Payload for `datadog-report-publisher`:
   - `Query Audit Trail`: every metric query verbatim with its DD query expression — the most important debugging aid.
 - `datadog_links`: 3–6 curated live URLs for the MD header — typically the metric explorer for the dominant query, the metric explorer for the by-`group_by` breakdown, and any covering dashboard / monitor URL discovered in Step 5.
 
-> Do **NOT** include `notebook_cells` in the payload. The publisher will silently drop it (per its Hard Constraints) and you will have wasted tokens.
-
 ### Step 8 — Publish
 
-Delegate to `datadog-report-publisher`. The publisher writes a single Markdown artefact under `{{DATADOG_TRIAGE_DIR}}/` with all evidence rows linking back to the live metric explorer / dashboards. **No Datadog notebook is created** — knowledge lives in the Obsidian vault only; the embedded UI deep-links keep the user one click away from live charts.
+Delegate to `datadog-report-publisher`. The publisher writes a single Markdown artefact under `{{DATADOG_TRIAGE_DIR}}/` with all evidence rows linking back to the live metric explorer / dashboards. Knowledge lives in the Obsidian vault; the embedded UI deep-links keep the user one click away from live charts.
 
 Filename example: `2026-04-21-metric-kubernetes-cpu-usage-total-staging.md`.
 
@@ -246,7 +242,7 @@ Agent flow:
 4. **Reuse existing dashboards** — link them in the report so the user can continue interactively.
 5. **Unit in every chart title / Evidence row** — "CPU 0.85" is not interpretable; "CPU cores (avg) 0.85" is.
 6. **Every Evidence row has a clickable URL** — metric explorer, dashboard, or monitor. No row should be a dead end.
-7. **Frozen artefact** — published triage notes are historical; follow-ups get new notes.
+7. **Frozen artefact** — a published triage note's evidence and analysis do not change; the only permitted edits are `status:` and a section appended at the bottom (Resolution, Promoted to runbook), per [docs/triage-architecture.md](../../docs/triage-architecture.md). Follow-ups get new notes.
 
 ## Dependencies
 
