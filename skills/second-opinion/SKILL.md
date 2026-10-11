@@ -1,12 +1,6 @@
 ---
 name: second-opinion
-description: >
-  Independent second opinion on work done by another agent. Reviews local changes (git diff),
-  commit ranges, or Pull Requests to detect bugs, misalignment with the original goal, and
-  CLAUDE.md violations. Can invoke the Claude Code /code-review command as a sub-agent (for PRs)
-  and generates a correction plan if findings warrant it. Use when an agent just made changes
-  and you want to validate them before continuing: "review what the agent did", "second opinion
-  on these commits", "validate agent work", "review agent changes", /second-opinion.
+description: 'Trigger: "review what the agent did", "second opinion on these commits", "validate agent work", "review agent changes", /second-opinion. Reviews a git diff, commit range or PR for bugs, intent drift and CLAUDE.md violations.'
 ---
 
 # Agent Reviewer

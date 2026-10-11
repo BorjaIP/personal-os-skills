@@ -1,6 +1,6 @@
 ---
 name: create-runbook
-description: Promote one or more triage notes in ops/<source>/ into a living runbook under ops/runbooks/. Use when the same class of failure has been observed two or more times, when the user says "create a runbook", "promote this to a runbook", or when an on-call procedure for a known failure pattern is needed.
+description: 'Trigger: same failure seen two or more times, "create a runbook", "promote this to a runbook", on-call procedure for a known failure. Promotes triage notes in ops/<source>/ into a runbook under ops/runbooks/.'
 ---
 
 # Create Runbook
@@ -18,7 +18,7 @@ Apply this skill when **any** of the following is true:
 3. The user explicitly asks to "create a runbook", "promote to runbook", "document this procedure".
 4. A fix exists but touches several systems (chart change, cluster setting, third-party tool) and a checklist would save time next time.
 
-Do **NOT** use for one-off postmortems or SEV-1/SEV-2 incidents — those go to `ops/incidents/` instead (see "Runbook vs Incident" below).
+Do **NOT** use for one-off events with no repeatable procedure — post-mortems go to `ops/incidents/` (see "Runbook vs Incident" below). A SEV-1/SEV-2 that also exposes a repeatable procedure gets both.
 
 ## Inputs
 

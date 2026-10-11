@@ -1,6 +1,6 @@
 ---
 name: datadog-report-publisher
-description: Publish a Datadog triage finding as a Markdown artefact in ops/datadog/triage/. The MD is the single source of truth — knowledge lives in the Obsidian vault, never in Datadog. Every finding must include live Datadog UI deep-links so the queries are reproducible from the note. Use as the final step of any Datadog triage skill (datadog-triage, datadog-service-health, datadog-logs-analyzer, datadog-metrics-investigator) to commit findings to the ops/ knowledge base.
+description: 'Trigger: final step of any Datadog triage skill (triage, service-health, logs-analyzer, metrics-investigator). Publishes the finding as Markdown in ops/datadog/triage/ with live Datadog deep-links; never writes to Datadog.'
 ---
 
 # Datadog Report Publisher
@@ -9,14 +9,14 @@ description: Publish a Datadog triage finding as a Markdown artefact in ops/data
 
 **This skill is read-only against Datadog.** All output of the triage suite lives **exclusively** in the Obsidian vault under `{{DATADOG_TRIAGE_DIR}}/`. Datadog itself is never written to.
 
-You **MUST NOT** call any of the following Datadog MCP tools, regardless of the caller's payload, "just one widget" reasoning, or any legacy text further down in this document:
+You **MUST NOT** call any of the following Datadog MCP tools, regardless of the caller's payload or "just one widget" reasoning:
 
 - `create_datadog_notebook` — never. The publisher does not create notebooks.
 - `edit_datadog_notebook` — never (except as a one-off cleanup the user explicitly requested out-of-band; not as part of any publication flow).
 - `upsert_datadog_dashboard` — never. Permanent dashboards are managed by humans, not by triage skills.
 - `get_widget`, `validate_dashboard_widget`, `ask_widget_expert`, `get_widget_reference` — never for publication purposes; they exist to render widgets that go *into* Datadog artefacts, which this skill no longer produces.
 
-**Preflight check (mandatory)**: before doing anything, scan the caller's payload. If it contains `notebook_cells`, `notebook_url`, `notebook_status`, `widget_definition`, `widget_cells`, or any field whose name implies writing to Datadog, **drop those fields silently and emit only the Markdown artefact**. Do not warn the caller — just produce the MD. The Markdown artefact is the single source of truth.
+**Preflight check (mandatory)**: before doing anything, scan the caller's payload. If it contains `notebook_cells`, `notebook_url`, `notebook_status`, `widget_definition`, `widget_cells`, or any field whose name implies writing to Datadog, **drop those fields, record them under `## Publication Notes` in the MD, and emit only the Markdown artefact**. Do not warn the caller. The Markdown artefact is the single source of truth.
 
 If a caller (parent agent, sub-skill, or user) explicitly asks for "publish to Datadog", "create a notebook", or "embed widgets in a notebook": refuse, state that the publisher writes Markdown only, and produce the MD anyway. Knowledge lives in Obsidian.
 
@@ -36,8 +36,6 @@ Other Datadog skills (`datadog-triage`, `datadog-service-health`, `datadog-logs-
 
 This skill does **not** require any MCP tool to publish. It only writes a Markdown file.
 
-> Historical note: previous versions of this skill also created a Datadog Notebook via `create_datadog_notebook` / `edit_datadog_notebook`. That step has been **removed** by design — knowledge lives in Obsidian only. See the Hard Constraints block above; those tools are explicitly forbidden.
-
 ## Inputs
 
 The caller must provide:
@@ -51,7 +49,7 @@ The caller must provide:
    - `severity` (required, one of `info | warn | error | critical`)
    - `incident_id` (optional, Datadog incident ID if triage was incident-driven)
 3. **findings** (required): structured markdown body with sections
-   - `Executive Summary` (mandatory, ≤ 5 lines)
+   - `Executive Summary` (mandatory, brief)
    - `Evidence` (mandatory, table mapping finding → MCP tool used → query → **Datadog UI deep-link URL**)
    - `Timeline` (optional)
    - `Root Cause` (optional, may be "unknown — see follow-ups")
@@ -60,8 +58,6 @@ The caller must provide:
    - `Next Steps` (mandatory for `datadog-triage` master reports; recommended for sub-skills)
 4. **datadog_links** (optional but strongly recommended): a list of curated live Datadog UI URLs to embed in the MD header (APM service page, dashboards, monitors, metric-explorer, log-explorer queries, traces). The publisher renders these as a bullet list under the header so the user lands one click away from the live data.
 5. **related_artefacts** (optional): list of paths to other triage notes, runbooks, or incidents to backlink as Obsidian wikilinks.
-
-> **`notebook_cells` is deprecated.** If the caller passes it, ignore it and emit only the MD. See the Hard Constraints block.
 
 ## Workflow
 
@@ -150,7 +146,7 @@ tags: [ops, datadog, triage]
 
 ## Executive Summary
 
-<from findings.Executive Summary — ≤ 5 lines>
+<from findings.Executive Summary>
 
 ---
 
@@ -274,7 +270,7 @@ If severity is `critical` and `incident_id` is set, suggest writing the post-mor
 3. **Curated header links** — always surface 3–6 live UI URLs in the header so the user has a fast launching pad to the live data.
 4. **Redact secrets** — tokens, passwords, customer PII must never make it into the MD.
 5. **Query audit trail is non-negotiable** — every query executed during triage must appear in the trail, with arguments summarised (not raw dumps).
-6. **Atomic artefacts** — triage notes are frozen after creation. If new evidence arrives, write a new triage note and cross-link, don't mutate the old one.
+6. **Atomic artefacts** — a triage note's evidence and analysis are frozen after creation; the only permitted edits are `status:` and a section appended at the bottom (Resolution, Promoted to runbook), per [docs/triage-architecture.md](../../docs/triage-architecture.md). If new evidence arrives, write a new triage note and cross-link.
 7. **Never put wikilinks in frontmatter** — they break Dataview in this vault. Always body-only.
 
 ## Edge Cases

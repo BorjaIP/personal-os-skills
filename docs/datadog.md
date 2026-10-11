@@ -1,6 +1,6 @@
 # Datadog Skills
 
-A suite of four skills plus a shared publisher that cover end-to-end Datadog triage. Instead of switching between APM, logs, and metrics dashboards manually, the orchestrator plans the investigation, delegates to specialised sub-skills, and consolidates everything into a single report with a linked Datadog Notebook.
+A suite of four skills plus a shared publisher that cover end-to-end Datadog triage. Instead of switching between APM, logs, and metrics dashboards manually, the orchestrator plans the investigation, delegates to specialised sub-skills, and consolidates everything into a single Markdown report with live Datadog deep-links.
 
 ## How they fit together
 
@@ -19,11 +19,11 @@ A suite of four skills plus a shared publisher that cover end-to-end Datadog tri
                             ▼
                  ┌───────────────────────┐
                  │ datadog-report-       │  writes MD to ops/datadog/triage/
-                 │ publisher             │  + creates Datadog Notebook (linked)
+                 │ publisher             │  (never writes to Datadog)  
                  └───────────────────────┘
 ```
 
-Every sub-skill delegates final publication to `datadog-report-publisher`, which writes an Obsidian-compatible Markdown artefact AND creates a persistent Datadog Notebook with embedded widgets. Both are linked bidirectionally (notebook URL in MD header, MD path in notebook first cell).
+Every sub-skill delegates final publication to `datadog-report-publisher`, which writes an Obsidian-compatible Markdown artefact whose evidence rows link back to the live Datadog UI. No Datadog notebook is created: the suite never writes to Datadog, and knowledge lives in the Obsidian vault.
 
 Recurring triage notes can be promoted to a runbook via the [`create-runbook`](../skills/create-runbook/) skill.
 
@@ -31,7 +31,7 @@ Recurring triage notes can be promoted to a runbook via the [`create-runbook`](.
 
 ## datadog-triage (orchestrator)
 
-Entry point for incident / monitor / service / alert triage. Plans the investigation, delegates to the three sub-skills below, and consolidates findings into a master report + master Datadog Notebook.
+Entry point for incident / monitor / service / alert triage. Plans the investigation, delegates to the three sub-skills below, and consolidates findings into a master Markdown report.
 
 ### When to use it
 
@@ -100,7 +100,7 @@ Metric spike / anomaly investigation. Capabilities:
 Shared publisher invoked by the other Datadog skills. You typically don't call it directly.
 
 - Writes the Markdown artefact to `ops/datadog/triage/`
-- Creates a Datadog Notebook with embedded widgets
-- Links both bidirectionally (notebook URL in MD header, MD path in notebook first cell)
+- Links evidence rows and the `datadog_links` header back to the live Datadog UI
+- Never creates or edits Datadog notebooks, dashboards or monitors
 
 All output follows the [triage architecture](triage-architecture.md) promotion pipeline.

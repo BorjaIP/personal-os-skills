@@ -1,6 +1,6 @@
 ---
 name: capture-insights
-description: Extract engineering insights from the current conversation and persist them to the Obsidian PKM vault at {{OBSIDIAN_VAULT}}/private/. Use when the user says "capture", "save this to obsidian", "remember this in my vault", or invokes /capture. Identifies technical knowledge (infra, CI/CD, debugging, architecture, patterns) and writes it to existing or new topic notes following the vault's conventions.
+description: 'Trigger: "capture", "save this to obsidian", "remember this in my vault", /capture. Extracts engineering insights from the conversation and writes them to topic notes in the Obsidian vault after user confirmation.'
 ---
 
 # Capture Insights to Obsidian PKM
@@ -173,7 +173,7 @@ This way a note like `CI Pipeline.md` can hold:
 - Never delete or overwrite existing content — only append.
 - Never capture ephemeral info (tool installation steps, conversation logistics).
 - Never create duplicate notes — always check existing files first.
-- Never add module-level docstrings or emoji to the captured content.
+- Never add emoji to the captured content.
 - Never invent information not discussed in the conversation.
 
 ## Example

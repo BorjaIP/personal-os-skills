@@ -1,6 +1,6 @@
 ---
 name: k8s-error-analyzer
-description: Analyze Kubernetes pod failures by reading logs from pods (supports label selectors), identifying errors and issues, and generating detailed error analysis reports. Use when users ask to troubleshoot pods, analyze Kubernetes errors, investigate pod failures, or understand what's wrong with their applications in k8s.
+description: 'Trigger: troubleshoot pods, analyze Kubernetes errors, investigate pod failures, what is wrong with my app in k8s. Reads pod logs and events (pod name or label selector) and writes an error analysis report.'
 ---
 
 # Kubernetes Error Analyzer
@@ -43,30 +43,14 @@ The skill requires the following inputs from the user:
    - Label selectors allow analyzing multiple pods with the same label
 
 3. **Time Range** (optional): How far back to retrieve logs
-   - Default: all available logs
+   - Default: last 500 lines per container (`--tail=500`)
    - Can specify: `--since=1h`, `--since=30m`, `--tail=1000`
 
 ## Analysis Workflow
 
-### Important: Command Audit Tracking
+### Command Audit Tracking
 
-**CRITICAL**: Throughout the entire analysis, maintain a comprehensive list of every kubectl command executed. This audit trail must be included in the final report under the "Command Audit Trail" section. Track each command with:
-- The exact command executed
-- Timestamp when it was run
-- Brief description of why it was executed
-
-Store commands in a list as you execute them:
-```python
-audit_trail = []
-
-# Example when executing a command:
-cmd = "kubectl get pods -n production -l app=web-frontend -o wide"
-audit_trail.append({
-    "command": cmd,
-    "timestamp": "2025-02-13T14:30:22Z",
-    "purpose": "Retrieve pod status and basic information for all web-frontend pods"
-})
-```
+Keep a list of every kubectl command you run (the exact command, when it ran, and why) and include it in the report under "Command Audit Trail" so others can reproduce the analysis.
 
 ### Step 1: Gather Pod Information
 
@@ -79,8 +63,6 @@ kubectl get pod <pod-name> -n <namespace> -o wide
 # If using label selector
 kubectl get pods -n <namespace> -l <label-selector> -o wide
 ```
-
-**Add to audit trail**: Document this command execution
 
 Capture:
 - Pod names
@@ -104,8 +86,6 @@ for pod in $(kubectl get pods -n <namespace> -l <label-selector> -o name); do
   kubectl describe $pod -n <namespace> | grep -A 20 "Events:"
 done
 ```
-
-**Add to audit trail**: Document each describe command executed
 
 Look for:
 - ImagePullBackOff errors
@@ -135,39 +115,9 @@ for pod in $(kubectl get pods -n <namespace> -l <label-selector> -o name | cut -
 done
 ```
 
-**Add to audit trail**: Document each logs command executed (including --previous, --all-containers flags used)
-
 ### Step 4: Analyze Logs
 
-Parse the logs to identify:
-
-**Error Patterns:**
-- Stack traces (Java, Python, Node.js, Go, etc.)
-- Exception messages
-- Error codes (HTTP 500, 404, connection errors)
-- Database connection failures
-- Memory/OOM errors
-- Timeout errors
-- Authentication/authorization failures
-- Configuration errors
-
-**Common Issues:**
-- Application crashes
-- Uncaught exceptions
-- Resource exhaustion
-- Network connectivity problems
-- Missing environment variables
-- Invalid configuration
-- Dependency failures
-- Health check failures
-
-**Log Analysis Techniques:**
-1. Group errors by type and frequency
-2. Identify the timeline of errors (when did they start?)
-3. Find correlation between events and errors
-4. Detect patterns (e.g., errors every 30 seconds)
-5. Extract relevant error messages and stack traces
-6. Note any warnings that preceded errors
+Group errors by type and frequency, establish when they started and how they line up with pod events, and note recurring intervals and any warnings that preceded the first error. Quote the relevant messages and stack traces as evidence.
 
 ### Step 5: Check Resource Usage
 
@@ -180,8 +130,6 @@ kubectl top pod <pod-name> -n <namespace>
 # Resource requests and limits
 kubectl get pod <pod-name> -n <namespace> -o jsonpath='{.spec.containers[*].resources}'
 ```
-
-**Add to audit trail**: Document resource inspection commands
 
 ### Step 6: Generate Error Analysis Report
 
@@ -462,55 +410,10 @@ mkdir -p "{{K8S_ANALYSES_DIR}}"
 
 ## Best Practices
 
-1. **Maintain Command Audit Trail**: Track every kubectl command executed during analysis with timestamp and purpose
-2. **Be Thorough**: Analyze all pods matching the selector, not just one
-3. **Look for Patterns**: Multiple pods with the same error indicate a systemic issue
-4. **Check Previous Logs**: If a pod restarted, check `--previous` logs for the crash
-5. **Consider Context**: Events often explain log errors
-6. **Prioritize Issues**: Focus on critical errors that prevent pod startup or cause crashes
-7. **Provide Actionable Fixes**: Don't just identify problems, suggest concrete solutions
-8. **Include Evidence**: Show the actual error messages and logs
-9. **Think Like an SRE**: Consider observability, monitoring, and prevention
-10. **Document Everything**: The audit trail enables others to reproduce your analysis
-
-## Error Classification
-
-Classify errors by type:
-
-- **Container Issues**: Image pull failures, entrypoint errors, missing dependencies
-- **Application Errors**: Code exceptions, logic errors, unhandled errors
-- **Resource Issues**: OOMKilled, CPU throttling, disk pressure
-- **Configuration Issues**: Missing env vars, bad config values, secret not found
-- **Network Issues**: DNS failures, connection timeouts, TLS errors
-- **Health Check Failures**: Liveness/readiness probe failures
-- **Dependency Issues**: Database connection failures, external API errors
-
-## Common Kubernetes Error Patterns
-
-Be aware of these common patterns:
-
-1. **CrashLoopBackOff**: Container crashes immediately after starting
-   - Check logs with `--previous` flag
-   - Look for application startup errors
-
-2. **ImagePullBackOff**: Cannot pull container image
-   - Check image name and tag
-   - Verify registry credentials
-   - Check network connectivity to registry
-
-3. **OOMKilled**: Container killed due to memory limit
-   - Increase memory limits
-   - Investigate memory leaks
-   - Optimize application memory usage
-
-4. **Pending**: Pod cannot be scheduled
-   - Check resource requests vs node capacity
-   - Look for node selectors or affinity rules
-   - Check for PV binding issues
-
-5. **Error / Failed**: Generic error state
-   - Check events for specific reason
-   - Review container logs for details
+1. **Cover every matching pod**: the same error across several pods points to a systemic issue.
+2. **Check previous logs**: after a restart, `--previous` holds the crash.
+3. **Include evidence**: show the actual error messages and log lines behind each conclusion.
+4. **Suggest concrete fixes**, not only the problems found.
 
 ## Example Usage
 
@@ -529,7 +432,7 @@ Response flow:
 ## Handling Edge Cases
 
 - **No logs available**: Report this clearly and check if pod even started
-- **Too many logs**: Focus on recent logs (last 1000 lines) and summarize
+- **Too many logs**: Narrow with `--since` or a larger `--tail`, and summarize
 - **Multiple containers**: Analyze each container separately
 - **Init containers**: Check init container logs if pod stuck in Init state
 - **Sidecar containers**: Don't ignore sidecar logs (often service mesh issues)
@@ -540,7 +443,7 @@ After completing the analysis:
 
 1. Create the markdown report
 2. Save it to the error_analyses directory
-3. Use the `present_files` tool to share the report with the user
+3. Share the report path with the user
 4. Provide a brief verbal summary of key findings
 5. Highlight the most critical issues requiring immediate attention
 

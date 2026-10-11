@@ -1,6 +1,6 @@
 ---
 name: datadog-logs-analyzer
-description: Analyse Datadog logs for a service, time window, or error pattern. Discovers patterns, aggregates by attributes with DDSQL, inspects raw samples, and produces a triage report under ops/datadog/triage/ with live Datadog Logs Explorer deep-links embedded for reproducibility. Never writes anything to Datadog. Use when the user asks to "investigate logs for X", "what errors are there in service X", "find log pattern Y", "aggregate logs by Z", "top errors in staging/prod", or when deeper log analysis is needed as a sub-step of incident or service-health triage.
+description: 'Trigger: "investigate logs for X", "what errors are there in service X", "find log pattern Y", "aggregate logs by Z", "top errors in staging/prod". Also a sub-step of incident or service-health triage. Read-only; report goes to ops/datadog/triage/.'
 ---
 
 # Datadog Logs Analyzer
@@ -9,7 +9,7 @@ description: Analyse Datadog logs for a service, time window, or error pattern. 
 
 **This skill is read-only against Datadog.** All output lives **exclusively** in the Obsidian vault under `{{DATADOG_TRIAGE_DIR}}/`. Datadog itself is never written to.
 
-You **MUST NOT** call any of the following Datadog MCP tools, regardless of any legacy text further down in this document, "just one widget" reasoning, or caller request:
+You **MUST NOT** call any of the following Datadog MCP tools, regardless of "just one widget" reasoning or caller request:
 
 - `create_datadog_notebook` — never. This skill does not create notebooks.
 - `edit_datadog_notebook` — never as part of triage.
@@ -17,8 +17,6 @@ You **MUST NOT** call any of the following Datadog MCP tools, regardless of any 
 - `get_widget`, `validate_dashboard_widget`, `ask_widget_expert`, `get_widget_reference` — never. Findings are surfaced as live Datadog Logs Explorer deep-links inside the Markdown report.
 
 If you find yourself about to call any of the above: stop, re-read this block, and instead construct the equivalent Datadog Logs Explorer URL (raw search, patterns view, Flex tier) and put it in the Evidence table.
-
-The downstream `datadog-report-publisher` enforces the same constraints. If it ever drops a `notebook_cells` field you sent, that's the constraints working — do not retry.
 
 ---
 
@@ -66,9 +64,9 @@ Collect from the user; ask only if missing:
 4. **focus** (optional): hint to prioritise one of `errors | warnings | patterns | volume`. Default `errors`.
 5. **incident_id** (optional): pass through to the report.
 
-## DDSQL Primer (critical)
+## DDSQL Primer
 
-`analyze_datadog_logs` runs DDSQL (a PostgreSQL subset) against a virtual `logs` table filtered by the supplied search `query`. Key rules the model frequently gets wrong:
+`analyze_datadog_logs` runs DDSQL (a PostgreSQL subset) against a virtual `logs` table filtered by the supplied search `query`. Key rules:
 
 - **Every non-aggregated SELECT column must appear in GROUP BY.**
 - **SELECT aliases cannot be reused in WHERE / GROUP BY / HAVING.** Repeat the full expression:
@@ -203,7 +201,7 @@ Payload for `datadog-report-publisher`:
 
 - `scope`: `{ service, env, resource: <dominant-pattern-slug>, severity, incident_id }`
 - `findings`:
-  - `Executive Summary`: 3–5 lines. Top pattern(s), volume trend (surging / stable / decaying), suspected root cause class (downstream timeout / validation error / capacity / config), correlation with APM if checked.
+  - `Executive Summary`: brief. Top pattern(s), volume trend (surging / stable / decaying), suspected root cause class (downstream timeout / validation error / capacity / config), correlation with APM if checked.
   - `Evidence`: table (pattern → count → share → representative message → **Datadog Logs Explorer deep-link**). Every row must have a clickable URL (typically `https://app.datadoghq.com/logs?query=...&from_ts=...&to_ts=...`, with `&viz=pattern` for the patterns view, or `&storage=flex_tier` if you queried Flex). Knowledge lives in Obsidian, but the live data is one click away in Datadog.
   - `Timeline`: first/last occurrence, bucketed volume.
   - `Root Cause`: state if clear; otherwise "hypothesis only — see follow-ups".
@@ -214,11 +212,9 @@ Payload for `datadog-report-publisher`:
   - `Query Audit Trail`: every MCP call with DDSQL shown verbatim so another human can reproduce.
 - `datadog_links`: 3–6 curated live URLs to surface in the MD header — typically the main Logs Explorer query, the patterns view, the Flex-tier view, and any related dashboard or monitor.
 
-> Do **NOT** include `notebook_cells` in the payload. The publisher will silently drop it (per its Hard Constraints) and you will have wasted tokens.
-
 ### Step 7 — Publish
 
-Delegate to `datadog-report-publisher`. The publisher writes a single Markdown artefact under `{{DATADOG_TRIAGE_DIR}}/` with all evidence rows linking back to the live Logs Explorer. **No Datadog notebook is created** — knowledge lives in the Obsidian vault only; the embedded UI deep-links keep the user one click away from live data.
+Delegate to `datadog-report-publisher`. The publisher writes a single Markdown artefact under `{{DATADOG_TRIAGE_DIR}}/` with all evidence rows linking back to the live Logs Explorer. Knowledge lives in the Obsidian vault; the embedded UI deep-links keep the user one click away from live data.
 
 Filename convention from publisher: `<YYYY-MM-DD>-<service>-<env>-<pattern-slug>.md` or `<YYYY-MM-DD>-logs-<pattern-slug>.md` when no service scope.
 
@@ -258,12 +254,12 @@ Output filename example: `2026-04-21-data-ai-mcp-business-ops-staging-timeout-pa
 
 ## Best Practices
 
-1. **Patterns before aggregates before raw** — the three-step pattern/attribute/aggregation cascade is 3–10× faster than brute-force raw searches.
+1. **Patterns before aggregates before raw** — clustering first and aggregating second avoids pulling thousands of raw lines.
 2. **Always state the DDSQL verbatim in the audit trail** — future-you must be able to paste-and-run it.
 3. **Correlate with APM** — log surges without a matching APM regression are often noisy info-logs, not real incidents.
-4. **Redact, redact, redact** — logs are the #1 source of secret leakage into reports.
+4. **Redact PII, tokens and internal IDs** — logs are a common source of secret leakage into reports.
 5. **Suggest log-based monitors** when you had to find a surge manually.
-6. **Frozen artefact** — do not mutate published triage notes; write a follow-up and cross-link if new evidence appears.
+6. **Frozen artefact** — a published triage note's evidence and analysis do not change; the only permitted edits are `status:` and a section appended at the bottom (Resolution, Promoted to runbook), per [docs/triage-architecture.md](../../docs/triage-architecture.md). Write a follow-up note and cross-link if new evidence appears.
 
 ## Dependencies
 

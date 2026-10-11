@@ -37,7 +37,7 @@
     },
     {
       "name": "datadog-triage-skill",
-      "description": "End-to-end Datadog triage orchestrator. Plans the investigation, delegates to service-health / logs / metrics sub-skills, and produces a consolidated report + master Datadog notebook.",
+      "description": "End-to-end Datadog triage orchestrator. Plans the investigation, delegates to service-health / logs / metrics sub-skills, and produces a consolidated Markdown report with live Datadog deep-links.",
       "source": "./",
       "strict": false,
       "skills": [
@@ -73,7 +73,7 @@
     },
     {
       "name": "datadog-report-publisher-skill",
-      "description": "Shared publisher for the Datadog skill suite: writes an Obsidian-friendly Markdown artefact AND a linked Datadog Notebook with embedded widgets.",
+      "description": "Shared publisher for the Datadog skill suite: writes an Obsidian-friendly Markdown artefact with live Datadog UI deep-links. It never writes to Datadog.",
       "source": "./",
       "strict": false,
       "skills": [
@@ -105,6 +105,24 @@
       "strict": false,
       "skills": [
         "./skills/stack-updater"
+      ]
+    },
+    {
+      "name": "capture-insights-skill",
+      "description": "Extract durable engineering insights from the current conversation and append them, with a date stamp, to topic notes in the Obsidian PKM vault.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/capture-insights"
+      ]
+    },
+    {
+      "name": "meet-skill",
+      "description": "Record meetings, transcribe with Whisper, create Obsidian notes, and enhance raw notes into a structured report with summary, decisions, action items and open questions.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/meet"
       ]
     }
   ]

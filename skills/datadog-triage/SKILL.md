@@ -1,6 +1,6 @@
 ---
 name: datadog-triage
-description: End-to-end Datadog triage orchestrator. Entry point for "triage this incident", "triage service X", "something is wrong in Datadog", "investigate this alert/monitor", or "triage this Datadog URL" requests. Accepts Datadog URLs (dashboards, monitors, incidents, metric explorer, log explorer, APM trace) and auto-resolves the scope. Plans the investigation, delegates to datadog-service-health / datadog-logs-analyzer / datadog-metrics-investigator, consolidates findings, and produces a single top-level triage Markdown report under ops/datadog/triage/ with embedded live Datadog UI deep-links and a Next Steps section. Knowledge lives in the Obsidian vault — no Datadog notebooks or dashboards are created. Use this as the default entry point for any Datadog diagnostic task that is not already narrowed to logs-only / metrics-only / service-only.
+description: 'Trigger: "triage this incident", "triage service X", "something is wrong in Datadog", "investigate this alert/monitor", "triage this Datadog URL". Default entry point: delegates to datadog-* sub-skills, writes one report to ops/datadog/triage/.'
 ---
 
 # Datadog Triage (Orchestrator)
@@ -9,7 +9,7 @@ description: End-to-end Datadog triage orchestrator. Entry point for "triage thi
 
 **This orchestrator and all its sub-skills are read-only against Datadog.** Every artefact produced lives **exclusively** in the Obsidian vault under `{{DATADOG_TRIAGE_DIR}}/`. Datadog itself is never written to.
 
-You **MUST NOT** call any of the following Datadog MCP tools, regardless of the URL the user pasted, the situation, or any legacy text further down in this document:
+You **MUST NOT** call any of the following Datadog MCP tools, regardless of the URL the user pasted or the situation:
 
 - `create_datadog_notebook` — never. The triage suite does not create notebooks.
 - `edit_datadog_notebook` — never as part of triage.
@@ -19,7 +19,7 @@ Read-only tools that ARE allowed and useful: `get_datadog_dashboard`, `get_datad
 
 **Preflight (mandatory, Step 0)**: before delegating to any sub-skill, restate the contract: "I will publish a single Markdown triage report at `<path>` and my sub-skills will publish their own Markdown reports. No Datadog notebooks or dashboards will be created." If the user explicitly asks for a notebook, refuse and explain that the triage suite is Markdown-only.
 
-When delegating to sub-skills, **never** include `notebook_cells` in the payload. Sub-skills enforce the same constraint and the publisher silently drops the field; passing it just wastes tokens.
+Sub-skill payloads contain only the fields defined in the Inputs of `datadog-report-publisher`.
 
 ---
 
@@ -127,7 +127,7 @@ When the user pastes a Datadog URL, recognise it by its path prefix and resolve 
 | `/apm/services/<service>?env=<env>` | APM service view | Set `entry_point = service` with `<service>` + `<env>`. Delegate to `datadog-service-health`. |
 | `/apm/trace/<trace_id>` | APM trace | `get_datadog_trace(trace_id=<trace_id>)` → extract the root service + env → set `entry_point = service` and run `datadog-service-health` anchored on the trace's time window. |
 | `/logs?query=<expr>` or `/logs/livetail?query=<expr>` | Log explorer | Parse `query`. Extract `service:` / `env:` tokens if present. Delegate to `datadog-logs-analyzer` with that query and (if present) service/env scope. |
-| `/notebook/<id>` | Existing notebook | `get_datadog_notebook(id=<id>)` — read its content. **Note:** this triage suite no longer creates Datadog notebooks (knowledge lives in the Obsidian vault under `{{DATADOG_TRIAGE_DIR}}/`). If the URL points to a third-party notebook, read it and use its queries as a starting scope. If it points to a deprecated `[triage]` notebook from before this skill change, ignore it and start a fresh triage. Either way: do NOT call `edit_datadog_notebook` to update it. |
+| `/notebook/<id>` | Existing notebook | `get_datadog_notebook(id=<id>)` — read its content. **Note:** this triage suite never writes to Datadog (knowledge lives in the Obsidian vault under `{{DATADOG_TRIAGE_DIR}}/`). Read the notebook and use its queries as a starting scope; if its title starts with `[triage]` it is an earlier triage artefact, so ignore it and start a fresh triage. Do NOT call `edit_datadog_notebook` to update it. |
 
 **URL resolution steps:**
 
@@ -161,7 +161,7 @@ For each entry in the plan, delegate to the sub-skill by invoking it with the st
 - Severity the sub-skill assigned.
 - Any curated `datadog_links` the sub-skill surfaced in the MD header (you'll merge them into the master report).
 
-> **No Datadog notebooks are produced.** All knowledge lives in the Obsidian vault — sub-skills only emit Markdown artefacts with embedded live Datadog UI deep-links. Per the Hard Constraints, never request notebook output from a sub-skill.
+> All knowledge lives in the Obsidian vault: sub-skills emit Markdown artefacts with embedded live Datadog UI deep-links.
 
 **Parallelism**: if two sub-skills are scope-independent (e.g. two different services, or metrics vs logs on the same service), invoke them in parallel. If scope-dependent (service-health's output drives which metric to investigate), run sequentially.
 
@@ -174,7 +174,7 @@ For each entry in the plan, delegate to the sub-skill by invoking it with the st
 
 Build the master findings payload. This is NOT just a concatenation of sub-reports — it is a curated narrative:
 
-- `Executive Summary` (3–7 lines, from the orchestrator's POV):
+- `Executive Summary` (from the orchestrator's point of view, short enough to read at a glance):
   - Overall verdict (single sentence: healthy / degraded / broken / unknown).
   - The single most likely root cause (if consensus across sub-skills).
   - The mitigation already suggested by the highest-severity sub-skill.
@@ -208,8 +208,6 @@ Delegate to `datadog-report-publisher` with:
 - `findings`: the master payload above (including the `Next Steps` section)
 - `datadog_links`: the curated header URLs from Step 4
 - `related_artefacts`: list of each sub-skill's `markdown_path` (so the master MD's `## Related` section backlinks them as unquoted Obsidian wikilinks).
-
-> Do **NOT** pass `notebook_cells`. The publisher emits a Markdown-only artefact; knowledge lives in the Obsidian vault.
 
 Filename examples produced by publisher:
 
