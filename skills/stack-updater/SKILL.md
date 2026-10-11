@@ -9,7 +9,7 @@ metadata:
 
 ## Activation Contract
 
-Load when the user asks whether anything installed by this repo can be updated: bootstrap tools (Claude Code, Codex, Cursor CLI, Gentle AI, Engram), Gentle AI-managed tools, the skills in this repository, or external (third-party) skills installed from `external/catalog.tsv`. Also load when the user names a new tool or repo to track.
+Load when the user asks whether anything installed by this repo can be updated: bootstrap tools (those listed by `./setup.sh --list tools`), Gentle AI-managed tools, the skills in this repository, or external (third-party) skills installed from `external/catalog.tsv`. Also load when the user names a new tool or repo to track.
 
 ## Hard Rules
 
@@ -28,7 +28,7 @@ Load when the user asks whether anything installed by this repo can be updated: 
 |-----------|--------|
 | Gentle AI, Engram, GGA | Use `gentle-ai update` for installed vs latest; apply with `gentle-ai upgrade` |
 | Claude / Cursor / Codex | Source-specific command in `references/update-commands.md` |
-| External skill installed | Status from `./install-external.sh list` (run from the repo root); latest is `unknown` because the skills CLI has no check-only mode. Update only on approval: `npx --yes skills@1.7.2 update -g <skill>` |
+| External skill installed | Status from `./install-external.sh list` (run from the repo root); latest is `unknown` because the skills CLI has no check-only mode. Update only on approval: `npx --yes skills@<SKILLS_CLI_VERSION> update -g <skill>`, with the pin read from `install-external.sh` |
 | Repo `behind` > 0 | `git pull --ff-only`, then `./install.sh --no-prompt --family <families already installed>` to re-render placeholder skills |
 | Repo `dirty` > 0 | Report it; do not pull until the user decides |
 | Skill `missing` for a detected harness | Report names in one line; install only via `./setup.sh --only <family>` on approval |

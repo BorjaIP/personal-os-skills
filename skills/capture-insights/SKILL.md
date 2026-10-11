@@ -173,7 +173,7 @@ This way a note like `CI Pipeline.md` can hold:
 - Never delete or overwrite existing content — only append.
 - Never capture ephemeral info (tool installation steps, conversation logistics).
 - Never create duplicate notes — always check existing files first.
-- Never add module-level docstrings or emoji to the captured content.
+- Never add emoji to the captured content.
 - Never invent information not discussed in the conversation.
 
 ## Example

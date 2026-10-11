@@ -13,7 +13,7 @@ Apply this skill when **any** of the following is true:
 
 1. The user asks to "enhance", "structure", or "clean up" meeting notes.
 2. A `.md` file under `meetings/notes/` has been provided and contains freeform notes.
-3. The user just stopped a recording (`meet-stop`) and the note was auto-created with raw content.
+3. The user just stopped a recording (`meet stop`) and the note was auto-created with raw content.
 4. The user explicitly invokes `meeting-notes-enhance` with a file path.
 
 ## Inputs
