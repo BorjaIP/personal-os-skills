@@ -23,11 +23,11 @@ These skills are the bridge. They connect the tools I use daily (Kubernetes, Jen
 - **[k8s-optimizer-cost](skills/k8s-optimizer-cost/)** — Right-size workloads using Datadog metrics and PerfectScale's policy-driven methodology
 
 ### Datadog
-- **[datadog-triage](skills/datadog-triage/)** — End-to-end triage orchestrator: plan, delegate to sub-skills, consolidate into a master report + notebook
+- **[datadog-triage](skills/datadog-triage/)** — End-to-end triage orchestrator: plan, delegate to sub-skills, consolidate into a master report
 - **[datadog-service-health](skills/datadog-service-health/)** — APM health check: latency percentiles, error rate, throughput, failing traces, dependency graph
 - **[datadog-logs-analyzer](skills/datadog-logs-analyzer/)** — Log investigation via pattern clustering, attribute discovery and DDSQL aggregation
 - **[datadog-metrics-investigator](skills/datadog-metrics-investigator/)** — Metric spike/anomaly investigation with sliced timeseries and baseline comparison
-- **[datadog-report-publisher](skills/datadog-report-publisher/)** — Shared publisher: writes Markdown artefact + creates bidirectionally-linked Datadog Notebook
+- **[datadog-report-publisher](skills/datadog-report-publisher/)** — Shared publisher: writes the Markdown artefact with live Datadog UI deep-links (no Datadog notebook is created)
 
 ### Ops
 - **[create-runbook](skills/create-runbook/)** — Promote related triage notes into a reusable runbook, backlink sources and flip status to resolved
@@ -48,7 +48,7 @@ I manage multiple clusters and namespaces. When a pod crashes or a deployment is
 
 ## Datadog
 
-Datadog is my primary observability stack. Instead of switching between APM, logs, and metrics dashboards manually, the triage orchestrator plans the investigation, delegates to specialised sub-skills, and consolidates everything into a single report with a linked Datadog Notebook. Full details: **[docs/datadog.md](docs/datadog.md)**.
+Datadog is my primary observability stack. Instead of switching between APM, logs, and metrics dashboards manually, the triage orchestrator plans the investigation, delegates to specialised sub-skills, and consolidates everything into a single Markdown report with live Datadog deep-links. Full details: **[docs/datadog.md](docs/datadog.md)**.
 
 ## Ops
 

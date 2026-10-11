@@ -266,7 +266,7 @@ Each skill in `skills/<name>/SKILL.md` uses `{{PLACEHOLDER}}` tokens for its out
 1. Prompts for your Obsidian vault path (optional; skip = fall back to local `./docs/...`).
 2. Derives the per-source paths (`K8S_ANALYSES_DIR`, `DATADOG_ANALYSES_DIR`, etc.).
 3. Persists them in `~/.config/personal-os-skills/config.env`.
-4. For any skill that contains placeholders, it renders a customised copy into `~/.claude/skills/<name>/` and `~/.cursor/skills-cursor/<name>/` with the paths baked in.
+4. For any skill that contains placeholders, it renders a customised copy into each detected harness's skills directory (`~/.claude/skills/<name>/`, `~/.cursor/skills/<name>/`, `~/.agents/skills/<name>/`) with the paths baked in.
 5. Bootstraps `ops/_index.md` and the source subfolders on the vault if they don't already exist.
 
 Re-run `./install.sh --reconfigure` any time you want to change paths. Re-run `./install.sh` after editing a SKILL.md so the rendered copies pick up the changes.
