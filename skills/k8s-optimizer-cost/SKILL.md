@@ -36,7 +36,7 @@ This skill requires:
 2. **Datadog MCP server** (`plugin-datadog-datadog`) for historical metrics over the `lookback` window (default 7d). Before starting:
    - Check that the MCP tools from `plugin-datadog-datadog` are available in your tool list.
    - If they are NOT available, follow the `ddsetup` skill first to initialize the server.
-   - Always discover tool names/schema by reading the MCP descriptors at `~/.cursor/projects/*/mcps/plugin-datadog-datadog/tools/*.json` (or the Claude equivalent) before invoking any tool. Do not guess tool names.
+   - Always discover tool names/schema by reading the MCP descriptors at `~/.cursor/projects/*/mcps/plugin-datadog-datadog/tools/*.json` (or the equivalent tool descriptors in your harness) before invoking any tool. Do not guess tool names.
 
 3. Optional: `jq` (recommended for parsing `kubectl -o json`).
 
@@ -60,30 +60,9 @@ If the Datadog MCP is missing and the user declines to set it up, you may degrad
 
 ## Analysis Workflow
 
-### Important: Command Audit Tracking
+### Command Audit Tracking
 
-**CRITICAL**: Throughout the entire analysis, maintain a comprehensive list of every `kubectl` command AND every Datadog MCP call executed. This audit trail must be included in the final report under the "Command Audit Trail" section. Track each entry with:
-- The exact command (or `server:tool` + arguments for MCP)
-- Timestamp when it was run
-- Brief description of why it was executed
-
-```python
-audit_trail = []
-
-# kubectl example
-audit_trail.append({
-    "command": "kubectl get deployments -n payments-staging -o wide",
-    "timestamp": "2026-04-21T12:30:22Z",
-    "purpose": "Inventory deployments in the namespace"
-})
-
-# Datadog MCP example
-audit_trail.append({
-    "command": "plugin-datadog-datadog:metrics_query(query='p95:kubernetes.memory.working_set{kube_namespace:payments-staging,kube_container_name:checkout-api} by {pod_name}', from='now-7d', to='now')",
-    "timestamp": "2026-04-21T12:31:05Z",
-    "purpose": "P95 memory working_set over 7d for checkout-api"
-})
-```
+Keep a list of every `kubectl` command and every Datadog MCP call you make (the exact command, or `server:tool` plus arguments for MCP; when it ran; and why) and include it in the report under "Command Audit Trail".
 
 ### Step 1 — Namespace Inventory
 
@@ -140,7 +119,7 @@ Window = `lookback` (default 7d), tagged by `kube_namespace` and `kube_container
 | CPU throttling | `avg:kubernetes.cpu.cfs.throttled.seconds{...}` and `avg:kubernetes.cpu.cfs.periods{...}` — compute `throttled_ratio = throttled_seconds / (periods * 0.1)` |
 | Replicas observed | `avg/max:kubernetes_state.deployment.replicas_available{kube_namespace:<ns>,kube_deployment:<d>}` |
 
-**Important**: Do NOT invent Datadog MCP tool names. Before the first call, read the descriptor files under `~/.cursor/projects/*/mcps/plugin-datadog-datadog/tools/` (or Claude's cache equivalent) and use the exact tool name and argument schema declared there. Call via `CallMcpTool` with `server: "plugin-datadog-datadog"`.
+Use the tool names and argument schemas declared by the `plugin-datadog-datadog` server (see Required Tools).
 
 **Add every MCP call to the audit trail** (include the full query string and `from`/`to`).
 
@@ -458,14 +437,9 @@ mkdir -p "{{K8S_COST_ANALYSES_DIR}}"
 
 ## Best Practices
 
-1. **Audit everything**: every `kubectl` and every Datadog MCP call goes into the audit trail with timestamp + purpose.
-2. **Percentiles over averages**: use p95 for requests and p99 for limits — averages hide bursts that cause throttling and OOM.
-3. **Respect LimitRange/ResourceQuota**: clamp recommendations and mark `Limited by Rule`.
-4. **Risk always beats savings**: if OOM or throttling is confirmed, bump the policy for that container and tolerate the cost increase.
-5. **Actionable output**: every recommendation comes with a ready-to-apply YAML snippet or `kubectl` command.
-6. **Evidence in the report**: include the observed percentiles alongside the recommendation so the reader can verify.
-7. **One workload = one sub-section**: do not mix metrics across workloads in the same table.
-8. **Savings are estimates**: always include the pricing assumptions used (`€/vCPU/month`, `€/GiB/month`) in the report footer.
+1. **Percentiles over averages**: use p95 for requests and p99 for limits — averages hide bursts that cause throttling and OOM.
+2. **Risk beats savings**: if OOM or throttling is confirmed, bump the policy for that container and accept the cost increase.
+3. **Savings are estimates**: include the pricing assumptions used (`€/vCPU/month`, `€/GiB/month`) in the report footer.
 
 ## Edge Cases
 
