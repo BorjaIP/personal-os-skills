@@ -1,6 +1,6 @@
 ---
 name: datadog-metrics-investigator
-description: Investigate a Datadog metric spike, regression, or anomaly. Discovers the metric's metadata/dimensions, queries timeseries with formulas, slices by tags, compares to baseline, and publishes findings as a triage report under ops/datadog/triage/ with live Datadog metric-explorer / dashboard deep-links embedded for reproducibility. Never writes anything to Datadog. Use when the user asks to "investigate metric X spike", "why did Y metric change", "analyse Z metric by tag", "is metric W healthy", or as the metrics-scoped step of incident triage. Also use for saturation / capacity checks and Cloud Cost metric investigations.
+description: 'Trigger: "investigate metric X spike", "why did Y metric change", "analyse Z metric by tag", "is metric W healthy", saturation, capacity or Cloud Cost metrics. Also the metrics step of incident triage. Read-only; report goes to ops/datadog/triage/.'
 ---
 
 # Datadog Metrics Investigator

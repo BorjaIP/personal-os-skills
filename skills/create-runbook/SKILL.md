@@ -1,6 +1,6 @@
 ---
 name: create-runbook
-description: Promote one or more triage notes in ops/<source>/ into a living runbook under ops/runbooks/. Use when the same class of failure has been observed two or more times, when the user says "create a runbook", "promote this to a runbook", or when an on-call procedure for a known failure pattern is needed.
+description: 'Trigger: same failure seen two or more times, "create a runbook", "promote this to a runbook", on-call procedure for a known failure. Promotes triage notes in ops/<source>/ into a runbook under ops/runbooks/.'
 ---
 
 # Create Runbook

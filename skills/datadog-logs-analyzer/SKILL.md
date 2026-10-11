@@ -1,6 +1,6 @@
 ---
 name: datadog-logs-analyzer
-description: Analyse Datadog logs for a service, time window, or error pattern. Discovers patterns, aggregates by attributes with DDSQL, inspects raw samples, and produces a triage report under ops/datadog/triage/ with live Datadog Logs Explorer deep-links embedded for reproducibility. Never writes anything to Datadog. Use when the user asks to "investigate logs for X", "what errors are there in service X", "find log pattern Y", "aggregate logs by Z", "top errors in staging/prod", or when deeper log analysis is needed as a sub-step of incident or service-health triage.
+description: 'Trigger: "investigate logs for X", "what errors are there in service X", "find log pattern Y", "aggregate logs by Z", "top errors in staging/prod". Also a sub-step of incident or service-health triage. Read-only; report goes to ops/datadog/triage/.'
 ---
 
 # Datadog Logs Analyzer

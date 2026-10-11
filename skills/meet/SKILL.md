@@ -1,6 +1,6 @@
 ---
 name: meeting-notes-enhance
-description: Enhance raw Obsidian meeting notes with AI — transforms sparse bullet points into a structured note with Summary, Decisions, Action Items, Open Questions, and preserves Raw Notes verbatim. Optionally incorporates a Whisper transcription from the paired file. Use when the user says "enhance my meeting notes", "structure this meeting", or invokes the skill on a .md file in meetings/notes/.
+description: 'Trigger: "enhance my meeting notes", "structure this meeting", a .md file in meetings/notes/. Turns raw notes (plus the Whisper transcript if present) into Summary, Decisions, Action Items, Open Questions and Raw Notes.'
 ---
 
 # Meeting Notes Enhance

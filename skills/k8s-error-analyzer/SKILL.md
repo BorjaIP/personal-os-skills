@@ -1,6 +1,6 @@
 ---
 name: k8s-error-analyzer
-description: Analyze Kubernetes pod failures by reading logs from pods (supports label selectors), identifying errors and issues, and generating detailed error analysis reports. Use when users ask to troubleshoot pods, analyze Kubernetes errors, investigate pod failures, or understand what's wrong with their applications in k8s.
+description: 'Trigger: troubleshoot pods, analyze Kubernetes errors, investigate pod failures, what is wrong with my app in k8s. Reads pod logs and events (pod name or label selector) and writes an error analysis report.'
 ---
 
 # Kubernetes Error Analyzer

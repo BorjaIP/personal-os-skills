@@ -1,6 +1,6 @@
 ---
 name: datadog-report-publisher
-description: Publish a Datadog triage finding as a Markdown artefact in ops/datadog/triage/. The MD is the single source of truth — knowledge lives in the Obsidian vault, never in Datadog. Every finding must include live Datadog UI deep-links so the queries are reproducible from the note. Use as the final step of any Datadog triage skill (datadog-triage, datadog-service-health, datadog-logs-analyzer, datadog-metrics-investigator) to commit findings to the ops/ knowledge base.
+description: 'Trigger: final step of any Datadog triage skill (triage, service-health, logs-analyzer, metrics-investigator). Publishes the finding as Markdown in ops/datadog/triage/ with live Datadog deep-links; never writes to Datadog.'
 ---
 
 # Datadog Report Publisher

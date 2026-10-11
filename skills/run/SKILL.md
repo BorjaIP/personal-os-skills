@@ -1,6 +1,6 @@
 ---
 name: run
-description: Wrapper for your own prompts. Resolves the current local project to its matching Meridian project in the Obsidian PKM vault ({{OBSIDIAN_VAULT}}/meridian/<slug>/PROMPTS.md), reads the latest active prompt you wrote there, and executes it in the current session as if you had typed it in chat. Use when the user says "run", "ejecuta mi prompt", "run my prompt", or invokes /run.
+description: 'Trigger: "run", "run my prompt", "ejecuta mi prompt", /run. Executes the latest active prompt from the project PROMPTS.md in the Obsidian vault as if typed in chat, then strikes it through.'
 ---
 
 # Run — execute my own prompt from the PKM

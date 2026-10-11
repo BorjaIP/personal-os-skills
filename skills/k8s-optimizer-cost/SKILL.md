@@ -1,6 +1,6 @@
 ---
 name: k8s-optimizer-cost
-description: Analyze cost efficiency and right-size Kubernetes workloads in a namespace using 7-day historical metrics from Datadog and PerfectScale-style policy-driven recommendations. Use when users ask to optimize cost, reduce waste, right-size pods/jobs, review over/under-provisioning, analyze resource requests/limits vs actual usage, or produce cost-savings reports for a namespace.
+description: 'Trigger: optimize cost, reduce waste, right-size pods/jobs, over/under-provisioning, requests/limits vs actual usage, namespace cost-savings report. Uses 7-day Datadog metrics and policy-driven recommendations.'
 ---
 
 # Kubernetes Cost Optimizer

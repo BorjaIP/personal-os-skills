@@ -1,6 +1,6 @@
 ---
 name: datadog-service-health
-description: Run a full Datadog APM health check for a service and produce a triage report. Inspects latency (p50/p95/p99), error rate, throughput, recent traces, upstream/downstream dependencies, and monitor coverage. Use when the user asks to "check the health of service X", "is service X degraded?", "investigate latency / errors in service X", "APM triage for service X", or as a sub-step of incident triage. Produces an Obsidian-friendly Markdown report under ops/datadog/triage/ with live Datadog UI deep-links embedded for reproducibility — never writes anything to Datadog itself.
+description: 'Trigger: "check the health of service X", "is service X degraded?", "investigate latency / errors in service X", "APM triage for service X", or as a sub-step of incident triage. Read-only; writes a report to ops/datadog/triage/.'
 ---
 
 # Datadog Service Health

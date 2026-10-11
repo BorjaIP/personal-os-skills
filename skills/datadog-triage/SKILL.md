@@ -1,6 +1,6 @@
 ---
 name: datadog-triage
-description: End-to-end Datadog triage orchestrator. Entry point for "triage this incident", "triage service X", "something is wrong in Datadog", "investigate this alert/monitor", or "triage this Datadog URL" requests. Accepts Datadog URLs (dashboards, monitors, incidents, metric explorer, log explorer, APM trace) and auto-resolves the scope. Plans the investigation, delegates to datadog-service-health / datadog-logs-analyzer / datadog-metrics-investigator, consolidates findings, and produces a single top-level triage Markdown report under ops/datadog/triage/ with embedded live Datadog UI deep-links and a Next Steps section. Knowledge lives in the Obsidian vault — no Datadog notebooks or dashboards are created. Use this as the default entry point for any Datadog diagnostic task that is not already narrowed to logs-only / metrics-only / service-only.
+description: 'Trigger: "triage this incident", "triage service X", "something is wrong in Datadog", "investigate this alert/monitor", "triage this Datadog URL". Default entry point: delegates to datadog-* sub-skills, writes one report to ops/datadog/triage/.'
 ---
 
 # Datadog Triage (Orchestrator)
